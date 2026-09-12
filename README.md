@@ -53,26 +53,61 @@ A complete, modern, responsive e-commerce website built with **Python Django**
                 whitenoise static files, WSGI + gunicorn `Procfile`,
                 `create_admin` command, `DEPLOYMENT.md` step-by-step guide
                 for Render/Railway/VPS — see "Deployment (PHASE 20)" below)
+- [x] Phase 21 — **Render + Neon launch wiring** (`render.yaml` Blueprint,
+                `build.sh`, Python pinned to 3.13, one-string `DATABASE_URL`
+                config, serverless-Postgres connection handling, `/healthz/`
+                probe, insecure-`SECRET_KEY` guard, console logging in
+                production, gzipped static, `--refresh-images` fix for
+                ephemeral media — see "Deployment" below)
 
-## Deployment (PHASE 20)
+## Deployment (PHASE 20 + 21)
 
-The store is ready to go live. The complete, beginner-friendly launch
-guide — GitHub → Render (or Railway/VPS) → Postgres → environment
-variables → domain → real email → real Razorpay keys — is in
-**`DEPLOYMENT.md`** at the project root. Work through its launch
-checklist (section 12) and the site is public.
+The store is live-ready on **Render** (the app) + **Neon** (PostgreSQL).
+The complete, beginner-friendly launch guide is **`DEPLOYMENT.md`** at the
+project root — work through its checklist (§13) and the site is public.
 
-In short, deployment needs **no code changes** — only environment
-variables (`DEBUG=False`, real `SECRET_KEY`, `ALLOWED_HOSTS`,
-`CSRF_TRUSTED_ORIGINS`, the six `DB_*` Postgres values, email +
-gateway keys). Everything else (HTTPS hardening, hashed static files,
-gunicorn start command, admin bootstrap) is already wired in.
+ShopSphere is a Django *monolith*: pages, admin and checkout logic are one
+Python app. So it is **two** services, not three — Render runs the whole
+app, Neon is its database.
+
+Since Phase 21 the deployment is described in code:
+
+| File | What it does |
+|---|---|
+| `render.yaml` | A Render **Blueprint** — region, plan, build/start commands, health check and every environment variable. Launching is *New + → Blueprint → pick this repo → Apply* |
+| `build.sh` | The build, in order: install → `collectstatic` → `migrate` → `create_admin` → `seed_data --refresh-images` |
+| `.python-version` | Pins Python **3.13** (Django 6.1 needs ≥ 3.12) |
+| `Procfile` | The same start command for Railway / Fly / Heroku-style hosts |
+| `ecommerce_project/dburl.py` | Parses one Postgres URL into Django's six DB fields |
+
+Deployment needs **no code changes** — only environment variables. And
+three of them you no longer have to set at all:
+
+- `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS` are picked up automatically from
+  the `RENDER_EXTERNAL_HOSTNAME` / `RENDER_EXTERNAL_URL` that Render injects,
+  so the first deploy answers on its own subdomain. Add them only for a
+  custom domain.
+- `SECRET_KEY` is generated for you by the Blueprint.
+- The database is **one string** (`DATABASE_URL`), pasted straight from the
+  Neon console — no hand-splitting into host/user/password/port.
+
+Neon-specific handling is built in, because a serverless database behaves
+differently from a normal one: `CONN_HEALTH_CHECKS`, `CONN_MAX_AGE=0` on
+pooled hosts and `DISABLE_SERVER_SIDE_CURSORS` prevent the intermittent
+`SSL SYSCALL error: EOF detected` that otherwise appears **hours after** a
+successful deploy, when Neon wakes from idle.
 
 Verify production-readiness any time (must print "no issues"):
 
 ```bat
 python manage.py check --deploy
 ```
+
+> With `DEBUG=False` the app now **refuses to start** if `SECRET_KEY` is
+> empty or still the committed placeholder — that key is public in this
+> repository, so anyone knowing it could forge session cookies. The guard
+> is skipped for offline commands (`test`, `collectstatic`, …) and while
+> `DEBUG=True`, so local development is unaffected.
 
 ## Quick start (Windows)
 
@@ -127,16 +162,35 @@ All secrets and environment-specific values live in `.env` (git-ignored):
 
 | Variable | Purpose |
 |---|---|
-| `SECRET_KEY` | signing key for sessions/CSRF |
+| `SECRET_KEY` | signing key for sessions/CSRF. **Required** when `DEBUG=False` |
 | `DEBUG` | dev error pages; **False** in production |
-| `ALLOWED_HOSTS` | comma-separated allowed domains |
-| `DB_ENGINE/NAME/USER/PASSWORD/HOST/PORT` | database (SQLite default, PostgreSQL-ready) |
+| `ALLOWED_HOSTS` | comma-separated allowed domains (auto-extended with Render's own hostname) |
+| `CSRF_TRUSTED_ORIGINS` | browser origins, **with** `https://` (auto-extended likewise) |
+| `DATABASE_URL` | **one** Postgres connection string — paste it straight from Neon |
+| `DIRECT_DATABASE_URL` | the non-pooled Neon string; `build.sh` migrates over it |
+| `PG*` / `DB_*` | alternative spellings for the same database (see below) |
+| `DB_CONN_MAX_AGE` / `DB_CONN_HEALTH_CHECKS` / `DB_SSLMODE` | serverless-Postgres tuning (sane defaults already set) |
+| `SEED_DEMO_DATA` | `true` (default) loads the demo catalogue on deploy; `false` leaves data alone |
+| `WEB_CONCURRENCY` | gunicorn worker processes (default 2) |
+| `MEDIA_ROOT` | where uploads are written — point at a persistent Disk when you have one |
+| `CSP_EXTRA_IMG_SRC` | extra image origins for the CSP, once photos move to a CDN |
 | `EMAIL_*` / `DEFAULT_FROM_EMAIL` | email (password reset, order mail) |
 | `RAZORPAY_*` / `STRIPE_*` | payment gateway keys (PHASE 13: while empty, the
                 checkout runs on the built-in test gateway) |
+| `DJANGO_SUPERUSER_*` | read by `manage.py create_admin` on a fresh deploy |
 
-Switching to PostgreSQL = change `DB_ENGINE` etc. in `.env` and
-`pip install psycopg2-binary`. No code changes.
+**Three ways to configure the database** — the first one that is set wins,
+so nothing existing broke:
+
+1. `DATABASE_URL` — *recommended.* The whole Neon string, one variable.
+2. `PGHOST` / `PGDATABASE` / `PGUSER` / `PGPASSWORD` / `PGPORT` — the
+   spelling Neon's own docs use.
+3. `DB_ENGINE` / `DB_NAME` / `DB_USER` / `DB_PASSWORD` / `DB_HOST` /
+   `DB_PORT` — the original local-development spelling.
+
+With none of them set you get SQLite, which is what you want on a laptop.
+Switching to PostgreSQL is therefore *one line* in `.env` — no code changes,
+and `psycopg2-binary` is already in `requirements.txt`.
 
 ## Security (PHASE 18)
 
@@ -154,7 +208,7 @@ Switching to PostgreSQL = change `DB_ENGINE` etc. in `.env` and
 
 ## Tests (PHASE 19)
 
-Run the full suite (69 tests, ~25 s) from the project folder:
+Run the full suite (88 tests, ~40 s) from the project folder:
 
 ```bat
 venv\Scripts\activate
@@ -163,7 +217,7 @@ python manage.py test
 
 | File | What it covers |
 | --- | --- |
-| `core/tests.py` | security headers, login rate limiting, 403/404/500 pages, robots.txt, sitemap.xml, navbar cache invalidation |
+| `core/tests.py` | security headers, login rate limiting, 403/404/500 pages, robots.txt, sitemap.xml, navbar cache invalidation, **connection-string parsing, `/healthz/` probe, CSP construction** |
 | `customers/tests.py` | registration, login/logout, full password-reset flow, address book, wishlist, newsletter |
 | `cart/tests.py` | session cart ops, stock limits, money totals |
 | `products/tests.py` | shop listing, filters, sorts, facets, category page, detail, live-suggest JSON, review flow (add/edit/delete/cancel) |

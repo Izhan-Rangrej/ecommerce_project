@@ -12,7 +12,10 @@ python-dotenv>=1.0        # reads SECRET_KEY, DB config etc. from a .env file
 
 # PHASE 20 — production server & database:
 # (both install fine on Windows too; gunicorn simply isn't USED there,
-#  psycopg2-binary is only loaded when DB_ENGINE=postgresql)
+#  psycopg2-binary is only loaded when the database is PostgreSQL)
 gunicorn>=23.0,<24           # production WSGI server (Linux/macOS)
-psycopg2-binary>=2.9         # PostgreSQL driver (production database)
+# 2.9.10 is the floor on purpose: Neon routes connections with TLS SNI, and
+# the libpq bundled in psycopg2 only supports SNI from v14 onwards. Older
+# builds fail to connect with the baffling "Endpoint ID is not specified".
+psycopg2-binary>=2.9.10      # PostgreSQL driver (Neon / production database)
 whitenoise>=6.6              # serves /static/ in production (no Nginx needed)

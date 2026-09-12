@@ -1,0 +1,160 @@
+# =============================================================================
+# render.yaml — Render Blueprint for ShopSphere
+#
+# A Blueprint is infrastructure-as-code: this one file describes the whole
+# deployment, so launching the store is
+#
+#     Render Dashboard -> New + -> Blueprint -> pick this repository -> Apply
+#
+# and Render reads everything below. No typing build commands into text boxes,
+# and the same file re-creates the service identically if you ever delete it.
+#
+# IMPORTANT — how the secret values work
+# --------------------------------------
+#   sync: false        Render PROMPTS you for this value once, during the
+#                      Blueprint creation flow, and never stores it in git.
+#                      (On later Blueprint updates Render ignores these —
+#                      add new secrets by hand in the Environment tab.)
+#   generateValue: true Render creates a strong random value for you.
+#
+# Nothing secret is hardcoded in this file, and this file is safe to commit.
+#
+# Docs: https://render.com/docs/blueprint-spec
+# =============================================================================
+
+services:
+  - type: web
+    # The service name. It becomes part of your free URL:
+    #     https://shopsphere.onrender.com   (Render appends a suffix if the
+    #                                        name is already taken)
+    name: shopsphere
+
+    runtime: python
+
+    # Free tier: 512 MB RAM, 0.1 CPU, sleeps after 15 idle minutes.
+    # Upgrade to `starter` ($7/mo) for an always-on site — nothing else in
+    # this file needs to change.
+    plan: free
+
+    # Singapore is Render's closest region to India (~100-150 ms, versus
+    # ~250-300 ms from Oregon). Create the Neon project in
+    # **AWS Asia Pacific (Singapore)** — `aws-ap-southeast-1` — to match.
+    # App and database in the same region matters far more than either one's
+    # distance to your browser: a server-rendered page issues many small
+    # queries, and each one pays the app->database round trip.
+    region: singapore
+
+    # Version pinned in .python-version (3.13). Django 6.1 needs >= 3.12.
+
+    # One script does the whole build, so it is versioned and identical on
+    # every deploy. See build.sh for what each step does and why.
+    buildCommand: ./build.sh
+
+    # gunicorn is the production WSGI server; whitenoise serves /static/.
+    # $PORT is provided by Render. WEB_CONCURRENCY (set below) decides how
+    # many worker processes handle requests in parallel.
+    startCommand: >-
+      gunicorn ecommerce_project.wsgi:application
+      --bind 0.0.0.0:$PORT
+      --workers ${WEB_CONCURRENCY:-2}
+      --timeout 120
+      --access-logfile -
+      --error-logfile -
+
+    # Render polls this after boot and on an interval. It answers without
+    # touching the database — see core/views.py::health_check for why that
+    # is deliberate (a DB-backed probe would fight Neon's cold starts).
+    healthCheckPath: /healthz/
+
+    # Re-deploy automatically on every push to this branch.
+    autoDeploy: true
+
+    # Free tier cannot run more than one instance, and preview environments
+    # would silently consume your 750 free instance-hours (and cannot see
+    # `sync: false` secrets anyway). Set to `automatic` once you are paid.
+    numInstances: 1
+    previews:
+      generation: manual
+
+    envVars:
+      # ---- Django core ---------------------------------------------------
+      # Turns on the whole production security block in settings.py:
+      # HTTPS redirect, HSTS, secure cookies, hashed+compressed static.
+      - key: DEBUG
+        value: "False"
+
+      # Signs sessions, CSRF and password-reset tokens. Generated for you —
+      # never reuse your laptop's key here.
+      - key: SECRET_KEY
+        generateValue: true
+
+      # ALLOWED_HOSTS and CSRF_TRUSTED_ORIGINS are intentionally NOT listed.
+      # Render sets RENDER_EXTERNAL_HOSTNAME / RENDER_EXTERNAL_URL on every
+      # web service and settings.py trusts them automatically, so the first
+      # deploy works with zero host configuration. Add these two variables
+      # here (or in the dashboard) only when you attach a custom domain.
+
+      # ---- Database: Neon ------------------------------------------------
+      # From the Neon console: Project -> Connect -> "Pooled connection".
+      # Paste the WHOLE string, e.g.
+      #   postgresql://neondb_owner:pw@ep-xxx-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+      - key: DATABASE_URL
+        sync: false
+
+      # The same string WITHOUT `-pooler` in the hostname ("Direct
+      # connection"). build.sh uses it for `migrate` only; PgBouncer's
+      # transaction pooling is unreliable for migrations.
+      # Optional but strongly recommended — leave blank and migrations run
+      # over the pooled URL.
+      - key: DIRECT_DATABASE_URL
+        sync: false
+
+      # ---- Admin account (created by build.sh on first deploy) -----------
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+
+      # ---- Store behaviour ----------------------------------------------
+      # true  = load the 18-product demo catalogue on every deploy
+      #         (idempotent — only fills in what is missing).
+      # false = leave the database alone; manage real products in /admin/.
+      # Flip this to false once you start adding your own catalogue.
+      - key: SEED_DEMO_DATA
+        value: "true"
+
+      # gunicorn worker processes. 2 is right for 512 MB. Note the in-process
+      # rate limiter and navbar cache are per-worker (see DEPLOYMENT.md).
+      - key: WEB_CONCURRENCY
+        value: "2"
+
+      # ---- Runtime plumbing ---------------------------------------------
+      # Send logs straight to Render's log stream without buffering — without
+      # this, output can appear minutes late or be lost when a worker dies.
+      - key: PYTHONUNBUFFERED
+        value: "1"
+
+      - key: DJANGO_SETTINGS_MODULE
+        value: ecommerce_project.settings
+
+      # Root logger level. Raise to DEBUG briefly to troubleshoot, then back.
+      - key: LOG_LEVEL
+        value: INFO
+
+      # ---- Optional: fill these in later, in the dashboard ---------------
+      #
+      # Real email (password reset + order confirmation). Until then the
+      # console backend prints mail into Render's logs, which is fine for a
+      # first launch. See DEPLOYMENT.md step 7.
+      #   EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+      #   EMAIL_HOST / EMAIL_PORT / EMAIL_HOST_USER / EMAIL_HOST_PASSWORD
+      #   DEFAULT_FROM_EMAIL
+      #
+      # Real payments. Leave unset to keep the built-in TEST gateway; the
+      # store switches to live automatically once both keys are present.
+      #   RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET
+      #
+      # Persistent uploads (needs a paid plan + an attached Disk):
+      #   MEDIA_ROOT=/var/data/media

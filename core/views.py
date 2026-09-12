@@ -165,6 +165,7 @@ def robots_txt(request):
         'Disallow: /account/',
         'Disallow: /accounts/',
         'Disallow: /search/suggest/',
+        'Disallow: /healthz/',
         '',
         f'Sitemap: {base.rstrip("/")}/sitemap.xml',
         '',
@@ -198,6 +199,50 @@ def sitemap_xml(request):
     return HttpResponse(
         render(request, 'sitemap.xml', {'base': base, 'urls': urls}),
         content_type='application/xml')
+
+
+# ---------------------------------------------------------------------------
+# Health check (PHASE 21 — deployment)
+# ---------------------------------------------------------------------------
+def health_check(request):
+    """
+    GET /healthz/ — the endpoint Render polls to decide whether this
+    instance is alive (Blueprint: `healthCheckPath: /healthz/`).
+
+    Why it deliberately does NOT touch the database:
+
+      * On the free tier the service sleeps after 15 idle minutes and Neon
+        suspends its compute after 5. A health check that queried Postgres
+        would have to wait for BOTH cold starts, frequently blowing past
+        Render's health-check timeout — and Render would then restart or
+        fail an instance that is actually fine.
+      * It would also keep waking Neon, burning its free compute hours.
+
+    So this proves what it needs to prove — the Python process is up,
+    Django's URL routing and middleware stack work, whitenoise isn't
+    wedged — and returns in well under a millisecond.
+
+    For a human doing a post-deploy check, `?db=1` additionally verifies
+    the database round-trip (that one is allowed to be slow).
+    """
+    payload = {'status': 'ok'}
+
+    if request.GET.get('db') == '1':
+        from django.db import connection
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute('SELECT 1')
+                cursor.fetchone()
+            payload['database'] = 'ok'
+        except Exception as exc:            # noqa: BLE001 — report, don't 500
+            payload['status'] = 'degraded'
+            payload['database'] = f'error: {exc.__class__.__name__}'
+            return JsonResponse(payload, status=503)
+
+    response = JsonResponse(payload)
+    # A load balancer or browser must never cache "ok" and serve it later.
+    response['Cache-Control'] = 'no-store, max-age=0'
+    return response
 
 
 # ---------------------------------------------------------------------------
