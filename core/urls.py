@@ -20,4 +20,7 @@ urlpatterns = [
     # PHASE 19: SEO files (sitemap + robots)
     path('sitemap.xml', views.sitemap_xml, name='sitemap'),
     path('robots.txt', views.robots_txt, name='robots'),
+
+    # PHASE 21: liveness probe for the hosting platform (Render polls it).
+    path('healthz/', views.health_check, name='health_check'),
 ]
