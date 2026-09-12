@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block title %}Order {{ order.order_number }} — ShopSphere{% endblock %}
+{% block meta_description %}Details for ShopSphere order {{ order.order_number }}: items, delivery and status.{% endblock %}
+
+{% block content %}
+{# ---------------- breadcrumbs ---------------- #}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb ss-breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'orders:order_list' %}">My orders</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ order.order_number }}</li>
+  </ol>
+</nav>
+
+<div class="order-detail-head shop-header">
+  <div class="reveal">
+    <h1 class="page-title mb-1">Order {{ order.order_number }}</h1>
+    <p class="page-sub mb-0">
+      Placed {{ order.created_at|date:"d M Y, H:i" }} ·
+      {{ order.total_items }} item{{ order.total_items|pluralize }}
+    </p>
+  </div>
+  <span class="order-badge order-badge--{{ order.order_status }} order-badge--lg">
+    {{ order.get_order_status_display }}
+  </span>
+</div>
+
+{% if order.order_status == 'cancelled' %}
+<div class="alert alert-ss alert-ss--danger order-cancelled-banner reveal">
+  <i class="bi bi-x-circle me-2" aria-hidden="true"></i>
+  <strong>This order was cancelled.</strong>
+  The items were returned to stock — place the order again anytime.
+</div>
+{% else %}
+{# ---------------- status timeline ---------------- #}
+<ol class="order-timeline reveal" aria-label="Order status">
+  {% for step in timeline %}
+  <li class="order-timeline__step order-timeline__step--{{ step.state }}">
+    <span class="order-timeline__dot">
+      {% if step.state == 'done' %}<i class="bi bi-check" aria-hidden="true"></i>
+      {% else %}{{ forloop.counter }}{% endif %}
+    </span>
+    <span class="order-timeline__label">{{ step.label }}</span>
+  </li>
+  {% endfor %}
+</ol>
+{% endif %}
+
+<div class="row g-4 g-lg-5">
+
+  {# ================= ITEMS + ADDRESS + ACTIONS ================= #}
+  <div class="col-lg-7">
+    <div class="card-ss p-4 p-lg-4 reveal">
+      <h3 class="auth-card__title">Items</h3>
+      <ul class="review-items">
+        {% for item in items %}
+        <li>
+          <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" loading="lazy">
+          <div class="review-items__info">
+            <a href="{% url 'products:detail' item.product.slug %}">{{ item.product.name }}</a>
+            <span>Qty {{ item.quantity }} × ₹{{ item.unit_price }}</span>
+          </div>
+          <strong>₹{{ item.subtotal }}</strong>
+        </li>
+        {% endfor %}
+      </ul>
+
+      <div class="review-block mt-4 mb-0">
+        <div class="review-block__head"><h3>Shipping address</h3></div>
+        <div class="review-block__body">
+          <strong>{{ order.billing_name }}</strong>
+          <span class="text-muted">· {{ order.billing_phone }}</span><br>
+          {{ order.billing_address_1 }}
+          {% if order.billing_address_2 %}, {{ order.billing_address_2 }}{% endif %}<br>
+          {{ order.billing_city }}, {{ order.billing_state }}
+          — {{ order.billing_pincode }}, {{ order.billing_country }}
+        </div>
+      </div>
+
+      {% if order.notes %}
+      <div class="review-block mt-3 mb-0">
+        <div class="review-block__head"><h3>Delivery notes</h3></div>
+        <div class="review-block__body">{{ order.notes }}</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="d-flex flex-wrap align-items-center gap-3 mt-4">
+      <a class="btn btn-ss-ghost" href="{% url 'orders:order_list' %}">
+        <i class="bi bi-arrow-left me-1"></i>All orders
+      </a>
+      {% if can_cancel %}
+      <form method="post" action="{% url 'orders:order_cancel' order.order_number %}"
+            onsubmit="return confirm('Cancel order {{ order.order_number }}? This cannot be undone.');">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-ss-danger">
+          <i class="bi bi-x-circle me-1"></i>Cancel this order
+        </button>
+      </form>
+      <span class="text-muted small">Free while the order is still Pending.</span>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ================= PAYMENT + TOTALS ================= #}
+  <div class="col-lg-5">
+    <div class="card-ss p-4 reveal">
+      <h3 class="auth-card__title mb-3">Payment</h3>
+      <div class="cart-totals">
+        <div class="cart-totals__row">
+          <span>Subtotal</span>
+          <span>₹{{ order.subtotal }}</span>
+        </div>
+        {% if order.discount_amount > 0 %}
+        <div class="cart-totals__row cart-totals__row--save">
+          <span>Coupon discount</span>
+          <span>−₹{{ order.discount_amount }}</span>
+        </div>
+        {% endif %}
+        <div class="cart-totals__row">
+          <span>Shipping</span>
+          <span>
+            {% if order.shipping_charge == 0 %}
+            <strong class="text-success">FREE</strong>
+            {% else %}
+            ₹{{ order.shipping_charge }}
+            {% endif %}
+          </span>
+        </div>
+        <div class="cart-totals__row">
+          <span>Tax (5%)</span>
+          <span>₹{{ order.tax_amount }}</span>
+        </div>
+        <hr class="ss-divider my-2">
+        <div class="cart-totals__grand">
+          <span>Grand total</span>
+          <span>₹{{ order.grand_total }}</span>
+        </div>
+        <small class="text-muted d-block text-end">Inclusive of all taxes</small>
+      </div>
+
+      {% if payment %}
+      <div class="ck-pay-status mt-3">
+        {% if payment.method == 'cod' %}
+        <i class="bi bi-cash-coin me-1" aria-hidden="true"></i>
+        {% else %}
+        <i class="bi bi-credit-card me-1" aria-hidden="true"></i>
+        {% endif %}
+        {{ payment.get_method_display }} ·
+        <span class="badge {% if payment.status == 'paid' %}text-bg-success{% elif payment.status == 'failed' %}text-bg-danger{% elif payment.status == 'refunded' %}text-bg-secondary{% else %}text-bg-warning{% endif %}">
+          {{ payment.get_status_display }}
+        </span>
+      </div>
+      {% if payment.paid_at %}
+      <small class="text-muted d-block mt-2">
+        Paid on {{ payment.paid_at|date:"d M Y, H:i" }}
+        {% if payment.transaction_id %} · ref {{ payment.transaction_id }}{% endif %}
+      </small>
+      {% endif %}
+      {% endif %}
+    </div>
+
+    <a class="btn btn-ss-primary w-100 mt-3" href="{% url 'products:shop' %}">
+      <i class="bi bi-bag-plus me-1"></i>Continue shopping
+    </a>
+  </div>
+
+</div>
+{% endblock %}

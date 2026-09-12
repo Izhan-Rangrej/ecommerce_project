@@ -1,0 +1,131 @@
+{# Step 4 — review & place.
+   Context: lines, totals, cart_count, selected_address,
+            payment_method ('cod' | 'card'), card_last4.
+   The address + payment come from the session (validated server-side);
+   this form only sends the delivery notes. The inline onclick is a
+   double-click guard ONLY — with JavaScript off the form still works,
+   and the server's "empty cart = nothing to order" rule stops any
+   duplicate order either way. #}
+<div class="card-ss p-4 p-lg-5 ck-step-card reveal">
+  <h2 class="auth-card__title mb-4">Review your order</h2>
+
+  <form method="post" action="{% url 'orders:place_order' %}" novalidate>
+    {% csrf_token %}
+
+    <div class="review-block">
+      <div class="review-block__head">
+        <h3>Ship to</h3>
+        <a href="{% url 'orders:checkout_step' 1 %}?ret=4">Change</a>
+      </div>
+      <div class="review-block__body">
+        <strong>{{ selected_address.full_name }}</strong>
+        <span class="text-muted">· {{ selected_address.phone }}</span><br>
+        {{ selected_address.address_line_1 }}
+        {% if selected_address.address_line_2 %}, {{ selected_address.address_line_2 }}{% endif %}<br>
+        {{ selected_address.city }}, {{ selected_address.state }}
+        — {{ selected_address.pincode }}, {{ selected_address.country }}
+      </div>
+    </div>
+
+    <div class="review-block">
+      <div class="review-block__head">
+        <h3>Delivery</h3>
+        <a href="{% url 'orders:checkout_step' 2 %}?ret=4">Change</a>
+      </div>
+      <div class="review-block__body">
+        <i class="bi bi-truck me-1" aria-hidden="true"></i>
+        Standard delivery · 3–5 business days ·
+        {% if totals.shipping == 0 %}
+        <strong class="text-success">FREE</strong>
+        {% else %}
+        ₹{{ totals.shipping }}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="review-block">
+      <div class="review-block__head">
+        <h3>Payment</h3>
+        <a href="{% url 'orders:checkout_step' 3 %}?ret=4">Change</a>
+      </div>
+      <div class="review-block__body">
+        {% if payment_method == 'cod' %}
+        <i class="bi bi-cash-coin me-1" aria-hidden="true"></i>
+        Cash on Delivery — you'll pay <strong>₹{{ totals.grand_total }}</strong>
+        when your order arrives.
+        {% else %}
+        <i class="bi bi-credit-card me-1" aria-hidden="true"></i>
+        Card ending <strong>{{ card_last4 }}</strong> — charged when you
+        place the order.
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="review-block">
+      <div class="review-block__head"><h3>Coupon</h3></div>
+      {% if coupon %}
+      <div class="ck-coupon ck-coupon--applied">
+        <span class="ck-coupon__code"><i class="bi bi-tag me-1" aria-hidden="true"></i>{{ coupon.code }}</span>
+        <span class="ck-coupon__save">−₹{{ totals.discount }}</span>
+        <form method="post" action="{% url 'orders:checkout_coupon' %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-ss-ghost btn-sm">Remove</button>
+        </form>
+      </div>
+      {% else %}
+      <form method="post" action="{% url 'orders:checkout_coupon' %}" class="ck-coupon-form">
+        {% csrf_token %}
+        <input type="text" name="code" class="form-control form-control-ss ck-coupon-input"
+               placeholder="Coupon code, e.g. WELCOME10" maxlength="50"
+               autocomplete="off" spellcheck="false">
+        <button type="submit" class="btn btn-ss-primary">Apply</button>
+      </form>
+      <p class="form-text mb-0">
+        <i class="bi bi-info-circle me-1"></i>
+        Try <strong>WELCOME10</strong> (10% off, no minimum).
+      </p>
+      {% endif %}
+    </div>
+
+    <div class="review-block">
+      <div class="review-block__head">
+        <h3>Items ({{ cart_count }})</h3>
+      </div>
+      <ul class="review-items">
+        {% for line in lines %}
+        {% if not line.oos %}
+        <li>
+          <img src="{{ line.product.image.url }}" alt="{{ line.product.name }}" loading="lazy">
+          <div class="review-items__info">
+            <a href="{% url 'products:detail' line.product.slug %}">{{ line.product.name }}</a>
+            <span>Qty {{ line.qty }} × ₹{{ line.product.final_price }}</span>
+          </div>
+          <strong>₹{{ line.line_total }}</strong>
+        </li>
+        {% endif %}
+        {% endfor %}
+      </ul>
+
+      <label class="form-label mt-3" for="id_notes">
+        Delivery notes <span class="text-muted fw-normal">(optional)</span>
+      </label>
+      <textarea class="form-control form-control-ss" id="id_notes" name="notes"
+                rows="2" maxlength="500"
+                placeholder="Gate code, landmark, best time to deliver…"></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-ss-primary btn-lg w-100 ck-place-btn"
+            onclick="this.disabled=true;this.form.submit();">
+      <i class="bi bi-lock me-2" aria-hidden="true"></i>
+      {% if payment_method == 'cod' %}
+      Place order — ₹{{ totals.grand_total }}
+      {% else %}
+      Pay ₹{{ totals.grand_total }} and place order
+      {% endif %}
+    </button>
+    <p class="text-muted small text-center mt-3 mb-0">
+      By placing this order you agree to ShopSphere's
+      <a href="{% url 'core:terms' %}">terms of service</a>.
+    </p>
+  </form>
+</div>

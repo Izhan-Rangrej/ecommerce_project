@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Contact Us — ShopSphere{% endblock %}
+{% block meta_description %}Get in touch with the ShopSphere team — support, orders and partnerships.{% endblock %}
+
+{% block content %}
+<div class="page-hero reveal">
+  <h1 class="page-title text-white">Contact us</h1>
+  <p class="page-sub text-white-50">We usually reply within one business day.</p>
+</div>
+
+<div class="row g-4 justify-content-center">
+  <div class="col-md-4 reveal">
+    <div class="card-ss p-4 text-center h-100 contact-card">
+      <div class="contact-card__icon"><i class="bi bi-geo-alt"></i></div>
+      <h5>Visit us</h5>
+      <p class="text-ss mb-0">ShopSphere HQ, Anand,<br>Gujarat 388001, India</p>
+    </div>
+  </div>
+  <div class="col-md-4 reveal">
+    <div class="card-ss p-4 text-center h-100 contact-card">
+      <div class="contact-card__icon"><i class="bi bi-envelope"></i></div>
+      <h5>Email us</h5>
+      <p class="text-ss mb-0"><a href="mailto:support@shopsphere.example">support@shopsphere.example</a></p>
+    </div>
+  </div>
+  <div class="col-md-4 reveal">
+    <div class="card-ss p-4 text-center h-100 contact-card">
+      <div class="contact-card__icon"><i class="bi bi-clock"></i></div>
+      <h5>Support hours</h5>
+      <p class="text-ss mb-0">Mon–Sat, 9:00 – 18:00 IST</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

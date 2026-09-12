@@ -1,0 +1,82 @@
+{# Step 3 — payment method.
+   Cash on Delivery + Card/UPI (PHASE 13: test-mode gateway — no real
+   money moves). The card form is part of the SAME form, so the whole
+   step is one plain POST (works without JavaScript).
+   Context: payment_method, card_form. #}
+<div class="card-ss p-4 p-lg-5 ck-step-card reveal">
+  <h2 class="auth-card__title mb-4">Payment method</h2>
+
+  <form method="post" action="{% url 'orders:checkout_continue' %}" novalidate>
+    {% csrf_token %}
+
+    <label class="ck-option{% if payment_method == 'cod' %} ck-option--selected{% endif %}">
+      <input type="radio" name="payment" value="cod" {% if payment_method == 'cod' %}checked{% endif %}>
+      <span class="ck-option__icon" aria-hidden="true"><i class="bi bi-cash-coin"></i></span>
+      <span class="ck-option__body">
+        <span class="ck-option__title">Cash on Delivery</span>
+        <span class="ck-option__sub">Pay in cash or UPI when your order arrives — no prepayment needed.</span>
+      </span>
+    </label>
+
+    <label class="ck-option{% if payment_method == 'card' %} ck-option--selected{% endif %}">
+      <input type="radio" name="payment" value="card" {% if payment_method == 'card' %}checked{% endif %}>
+      <span class="ck-option__icon" aria-hidden="true"><i class="bi bi-credit-card"></i></span>
+      <span class="ck-option__body">
+        <span class="ck-option__title">Card / UPI online</span>
+        <span class="ck-option__sub">Pay now with your card or UPI — test mode, no real charge is made.</span>
+      </span>
+      <span class="badge text-bg-primary ck-option__soon">Test mode</span>
+    </label>
+
+    {# -------- card details (shown while the card option is selected) -------- #}
+    {% if payment_method == 'card' %}
+    <div class="ck-card-form">
+      <h3 class="ck-card-form__title"><i class="bi bi-shield-lock me-1" aria-hidden="true"></i>Card details</h3>
+
+      {% if card_form.non_field_errors %}
+      <div class="alert alert-ss alert-ss--danger py-2">{{ card_form.non_field_errors.0 }}</div>
+      {% endif %}
+
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label" for="{{ card_form.card_number.id_for_label }}">{{ card_form.card_number.label }}</label>
+          {{ card_form.card_number }}
+          {% for error in card_form.card_number.errors %}<div class="form-text text-danger">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="{{ card_form.name.id_for_label }}">{{ card_form.name.label }}</label>
+          {{ card_form.name }}
+          {% for error in card_form.name.errors %}<div class="form-text text-danger">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="{{ card_form.expiry.id_for_label }}">{{ card_form.expiry.label }}</label>
+          {{ card_form.expiry }}
+          {% for error in card_form.expiry.errors %}<div class="form-text text-danger">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="{{ card_form.cvv.id_for_label }}">{{ card_form.cvv.label }}</label>
+          {{ card_form.cvv }}
+          {% for error in card_form.cvv.errors %}<div class="form-text text-danger">{{ error }}</div>{% endfor %}
+        </div>
+      </div>
+
+      <div class="ck-card-hint">
+        <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+        <strong>Test gateway — no real money moves.</strong>
+        Any 16-digit number works (try <code>4242 4242 4242 4242</code>),
+        except <code>4000 0000 0000 0002</code>, which is always declined.
+        Expiry must be in the future; CVV can be any 3–4 digits.
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="d-flex flex-wrap gap-2 mt-4">
+      <a class="btn btn-ss-ghost" href="{% url 'orders:checkout_step' 2 %}">
+        <i class="bi bi-arrow-left me-1"></i>Back
+      </a>
+      <button type="submit" class="btn btn-ss-primary">
+        Continue to review <i class="bi bi-arrow-right ms-1"></i>
+      </button>
+    </div>
+  </form>
+</div>

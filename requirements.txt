@@ -1,0 +1,18 @@
+# E-commerce project — Python dependencies
+# Install with:  pip install -r requirements.txt
+#
+# Versions below are what this project was built and tested against.
+# "X>=a,b" means "a or newer, but below b".
+
+Django>=6.1,<6.2          # web framework (LTS line 5.2 works too)
+Pillow>=12.0              # image handling for product photo uploads
+django-crispy-forms>=2.3  # renders Django forms with a CSS framework
+crispy-bootstrap5>=2025.1 # Bootstrap 5 template pack for crispy-forms
+python-dotenv>=1.0        # reads SECRET_KEY, DB config etc. from a .env file
+
+# PHASE 20 — production server & database:
+# (both install fine on Windows too; gunicorn simply isn't USED there,
+#  psycopg2-binary is only loaded when DB_ENGINE=postgresql)
+gunicorn>=23.0,<24           # production WSGI server (Linux/macOS)
+psycopg2-binary>=2.9         # PostgreSQL driver (production database)
+whitenoise>=6.6              # serves /static/ in production (no Nginx needed)

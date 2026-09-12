@@ -1,0 +1,18 @@
+{# partials/_stars.html — star rating display (supports fractions). #}
+{# Usage: {% include 'partials/_stars.html' with rating=4.2 count=7 %} #}
+{# NOTE: Django template comments are SINGLE-LINE only — each line needs #}
+{# its own hash-brace delimiters, or the whole block leaks as visible text. #}
+{# Renders 5 grey stars with a gold overlay clipped to the rating width, #}
+{# plus the review count when given. "No reviews yet" when rating=0. #}
+{% if rating %}
+<span class="stars" style="--rating: {{ rating|floatformat:1 }}"
+      title="{{ rating|floatformat:1 }} out of 5{% if count %} ({{ count }} review{{ count|pluralize }}){% endif %}"
+      aria-label="Rated {{ rating|floatformat:1 }} out of 5">
+  <span class="stars__bg" aria-hidden="true">★★★★★</span>
+  <span class="stars__fg" aria-hidden="true"
+        style="width: calc({{ rating|floatformat:1 }} / 5 * 100%)">★★★★★</span>
+</span>
+{% if count %}<span class="stars__count">{{ count }}</span>{% endif %}
+{% else %}
+<span class="text-muted small">No reviews yet</span>
+{% endif %}

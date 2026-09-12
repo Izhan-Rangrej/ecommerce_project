@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Saved addresses — ShopSphere{% endblock %}
+
+{% block content %}
+<div class="account-header d-flex flex-wrap align-items-center gap-3 mb-4 reveal">
+  <div>
+    <h1 class="page-title mb-0">Saved addresses</h1>
+    <span class="text-muted small">Your default address is preselected at checkout.</span>
+  </div>
+  <a class="btn btn-ss-primary ms-auto" href="{% url 'customers:address_add' %}">
+    <i class="bi bi-plus-lg me-1"></i>Add new address
+  </a>
+</div>
+
+{% if addresses %}
+<div class="row g-3 g-lg-4">
+  {% for address in addresses %}
+  <div class="col-md-6 col-xl-4 reveal">
+    <div class="card-ss address-card h-100 position-relative p-4">
+      {% if address.is_default %}
+      <span class="badge-default"><i class="bi bi-star-fill me-1"></i>Default</span>
+      {% endif %}
+
+      <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+        <h3 class="address-card__label mb-0">
+          {% if address.label %}{{ address.label }}{% else %}{{ address.city }}{% endif %}
+        </h3>
+        <i class="bi bi-geo-alt-fill text-muted"></i>
+      </div>
+
+      <address class="address-card__body mb-3">
+        <strong>{{ address.full_name }}</strong><br>
+        {{ address.address_line_1 }}
+        {% if address.address_line_2 %}{{ address.address_line_2 }}<br>{% endif %}
+        {{ address.city }}, {{ address.state }} — {{ address.pincode }}<br>
+        {{ address.country }}<br>
+        <i class="bi bi-telephone me-1"></i>{{ address.phone }}
+      </address>
+
+      <div class="d-flex flex-wrap gap-2">
+        {% if not address.is_default %}
+        <form method="post" action="{% url 'customers:address_set_default' address.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-ss-ghost btn-sm">
+            <i class="bi bi-star me-1"></i>Make default
+          </button>
+        </form>
+        {% endif %}
+        <a class="btn btn-ss-ghost btn-sm" href="{% url 'customers:address_edit' address.pk %}">
+          <i class="bi bi-pencil me-1"></i>Edit
+        </a>
+        <form method="post" action="{% url 'customers:address_delete' address.pk %}"
+              onsubmit="return confirm('Delete this address?');">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-ss-danger btn-sm">
+            <i class="bi bi-trash me-1"></i>Delete
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state reveal">
+  <div class="empty-state__icon"><i class="bi bi-geo-alt"></i></div>
+  <h3 class="empty-state__title">No saved addresses yet</h3>
+  <p class="empty-state__text">
+    Add one now and check out in a few taps later.
+  </p>
+  <a class="btn btn-ss-primary btn-lg" href="{% url 'customers:address_add' %}">
+    <i class="bi bi-plus-lg me-1"></i>Add your first address
+  </a>
+</div>
+{% endif %}
+{% endblock %}

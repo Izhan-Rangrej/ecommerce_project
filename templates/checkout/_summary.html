@@ -1,0 +1,42 @@
+{# Mini order summary — shown on the right of every checkout step.
+   Context: lines, totals, cart_count. #}
+<div class="card-ss p-4 ck-summary reveal">
+  <h2 class="auth-card__title mb-3">Order summary</h2>
+  <p class="ck-summary__count mb-3">
+    {{ cart_count }} item{{ cart_count|pluralize }} ·
+    <a href="{% url 'cart:page' %}"><i class="bi bi-pencil me-1"></i>Edit cart</a>
+  </p>
+
+  <div class="cart-totals">
+    <div class="cart-totals__row">
+      <span>Subtotal</span>
+      <span>₹{{ totals.subtotal }}</span>
+    </div>
+    {% if totals.discount > 0 %}
+    <div class="cart-totals__row cart-totals__row--save">
+      <span>Coupon ({{ coupon.code }})</span>
+      <span>−₹{{ totals.discount }}</span>
+    </div>
+    {% endif %}
+    <div class="cart-totals__row">
+      <span>Shipping</span>
+      <span>
+        {% if totals.shipping == 0 %}
+        <strong class="text-success">FREE</strong>
+        {% else %}
+        ₹{{ totals.shipping }}
+        {% endif %}
+      </span>
+    </div>
+    <div class="cart-totals__row">
+      <span>Tax (5%)</span>
+      <span>₹{{ totals.tax }}</span>
+    </div>
+    <hr class="ss-divider my-2">
+    <div class="cart-totals__grand">
+      <span>Grand total</span>
+      <span>₹{{ totals.grand_total }}</span>
+    </div>
+    <small class="text-muted d-block text-end">Inclusive of all taxes</small>
+  </div>
+</div>

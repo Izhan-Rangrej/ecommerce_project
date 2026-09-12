@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Something went wrong — ShopSphere{% endblock %}
+
+{% block content %}
+<div class="error-page text-center">
+  <div class="error-page__code" aria-hidden="true">500</div>
+  <h1 class="page-title">Something went wrong on our side</h1>
+  <p class="page-sub">
+    Our team has been notified and is on it. Please try again in a minute —
+    nothing you did caused this.
+  </p>
+  <div class="error-page__actions">
+    <a class="btn btn-ss-primary btn-lg" href="/">
+      <i class="bi bi-house me-2"></i>Back to Home
+    </a>
+  </div>
+</div>
+{% endblock %}

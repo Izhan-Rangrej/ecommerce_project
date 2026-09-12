@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}ShopSphere — Online Shopping for Electronics, Fashion, Home &amp; More{% endblock %}
+{% block og_title %}ShopSphere — Shop Electronics, Fashion, Home & Sports Online{% endblock %}
+
+{% block content %}
+{# ====================================================================== #}
+{# HERO                                                                   #}
+{# ====================================================================== #}
+<section class="hero">
+  <div class="row align-items-center g-4 g-lg-5">
+    <div class="col-lg-6">
+      <span class="hero__badge reveal"><i class="bi bi-stars me-1"></i>New season. New looks.</span>
+      <h1 class="hero__title reveal">
+        Everything you love,<br>
+        <span class="text-grad">delivered to your door.</span>
+      </h1>
+      <p class="hero__sub reveal">
+        Discover hand-picked electronics, fashion, home &amp; living and sports
+        gear — honest prices, fast delivery and easy 7-day returns.
+      </p>
+      <div class="hero__actions reveal">
+        <a href="{% url 'products:shop' %}" class="btn btn-ss-primary btn-lg px-4">
+          <i class="bi bi-bag-plus me-2"></i>Shop Now
+        </a>
+        <a href="#categories" class="btn btn-ss-ghost btn-lg px-4">
+          Explore Collection
+        </a>
+      </div>
+      <div class="hero__stats reveal">
+        <div class="hero__stat">
+          <strong>18+</strong>
+          <span>Curated products</span>
+        </div>
+        <div class="hero__stat">
+          <strong>7</strong>
+          <span>Categories</span>
+        </div>
+        <div class="hero__stat">
+          <strong>7-day</strong>
+          <span>Easy returns</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="hero__image reveal">
+        <img src="{% static 'images/hero.jpg' %}" alt="Featured products: headphones, smart watch, sneakers and sunglasses" loading="eager">
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ====================================================================== #}
+{# TRUST STRIP                                                            #}
+{# ====================================================================== #}
+<section class="trust-strip">
+  <div class="row g-3">
+    <div class="col-6 col-lg-3 reveal">
+      <div class="trust-item"><i class="bi bi-truck"></i><span>Free shipping over ₹1,000</span></div>
+    </div>
+    <div class="col-6 col-lg-3 reveal">
+      <div class="trust-item"><i class="bi bi-arrow-repeat"></i><span>7-day easy returns</span></div>
+    </div>
+    <div class="col-6 col-lg-3 reveal">
+      <div class="trust-item"><i class="bi bi-shield-check"></i><span>Secure payments</span></div>
+    </div>
+    <div class="col-6 col-lg-3 reveal">
+      <div class="trust-item"><i class="bi bi-cash-coin"></i><span>Cash on Delivery</span></div>
+    </div>
+  </div>
+</section>
+
+{# ====================================================================== #}
+{# CATEGORIES                                                             #}
+{# ====================================================================== #}
+<section class="home-section" id="categories">
+  <div class="home-section__head reveal">
+    <div>
+      <h2 class="page-title">Shop by category</h2>
+      <p class="page-sub">Browse our collections and find exactly what you need.</p>
+    </div>
+  </div>
+
+  {% if categories %}
+  <div class="row row-cols-2 row-cols-md-3 row-cols-xl-7 g-3 g-lg-4">
+    {% for category in categories %}
+    <a class="cat-tile cat-tile--{{ forloop.counter0|default:0 }} reveal"
+       href="{% url 'products:category' category.slug %}"
+       title="Browse {{ category.name }}">
+      <div class="cat-tile__icon">
+        {% if category.image %}
+        <img src="{{ category.image.url }}" alt="{{ category.name }}" loading="lazy">
+        {% else %}
+        <span>{{ category.name|first|upper }}</span>
+        {% endif %}
+      </div>
+      <div class="cat-tile__info">
+        <span class="cat-tile__name">{{ category.name }}</span>
+        <span class="cat-tile__count">{{ category.product_count }} items</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state reveal">
+    <div class="empty-state__icon"><i class="bi bi-grid"></i></div>
+    <h3 class="empty-state__title">No categories yet</h3>
+    <p class="empty-state__text">
+      Add categories in the admin panel, or run
+      <code>python manage.py seed_data</code> to fill the store with a demo catalog.
+    </p>
+  </div>
+  {% endif %}
+</section>
+
+{# ====================================================================== #}
+{# FEATURED PRODUCTS                                                      #}
+{# ====================================================================== #}
+<section class="home-section">
+  <div class="home-section__head d-flex flex-wrap align-items-end justify-content-between gap-2 reveal">
+    <div>
+      <h2 class="page-title">Featured products</h2>
+      <p class="page-sub">Hand-picked favourites, refreshed weekly.</p>
+    </div>
+    <a href="{% url 'products:shop' %}" class="btn btn-ss-ghost btn-sm">View all <i class="bi bi-arrow-right ms-1"></i></a>
+  </div>
+
+  {% if featured %}
+  <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-3 g-lg-4">
+    {% for product in featured %}
+    <div class="col reveal">
+      {% include 'partials/_product_card.html' with product=product rating=product.avg_rating count=product.review_count %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state reveal">
+    <div class="empty-state__icon"><i class="bi bi-bag"></i></div>
+    <h3 class="empty-state__title">The store is empty</h3>
+    <p class="empty-state__text">
+      Add products in the admin panel, or run
+      <code>python manage.py seed_data</code> for a realistic demo catalog.
+    </p>
+    <a class="btn btn-ss-primary" href="/admin/products/product/add/">Add your first product</a>
+  </div>
+  {% endif %}
+</section>
+
+{# ====================================================================== #}
+{# PROMO BANNER                                                           #}
+{# ====================================================================== #}
+<section class="promo">
+  <div class="promo__inner reveal">
+    <div class="promo__text">
+      <span class="promo__kicker"><i class="bi bi-lightning-charge-fill me-1"></i>Limited time offer</span>
+      <h2 class="promo__title">Summer Sale — Up to 50% Off</h2>
+      <p class="promo__sub">On select electronics, fashion &amp; sports. Plus code <strong>WELCOME10</strong> for 10% off your first order.</p>
+    </div>
+    <a href="{% url 'products:shop' %}" class="btn btn-light btn-lg px-4 promo__cta">
+      Shop the sale <i class="bi bi-arrow-right ms-1"></i>
+    </a>
+  </div>
+</section>
+
+{# ====================================================================== #}
+{# NEW ARRIVALS                                                           #}
+{# ====================================================================== #}
+<section class="home-section">
+  <div class="home-section__head d-flex flex-wrap align-items-end justify-content-between gap-2 reveal">
+    <div>
+      <h2 class="page-title">New arrivals</h2>
+      <p class="page-sub">Fresh stock, just landed.</p>
+    </div>
+  </div>
+
+  {% if new_arrivals %}
+  <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-3 g-lg-4">
+    {% for product in new_arrivals %}
+    <div class="col reveal">
+      {% include 'partials/_product_card.html' with product=product rating=product.avg_rating count=product.review_count %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+
+{# ====================================================================== #}
+{# BEST SELLERS                                                           #}
+{# ====================================================================== #}
+<section class="home-section">
+  <div class="home-section__head d-flex flex-wrap align-items-end justify-content-between gap-2 reveal">
+    <div>
+      <h2 class="page-title">Best sellers</h2>
+      <p class="page-sub">The products our customers keep coming back for.</p>
+    </div>
+  </div>
+
+  {% if best_sellers %}
+  <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-3 g-lg-4">
+    {% for product in best_sellers %}
+    <div class="col reveal">
+      {% include 'partials/_product_card.html' with product=product rating=product.avg_rating count=product.review_count %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+
+{# ====================================================================== #}
+{# CUSTOMER REVIEWS                                                       #}
+{# ====================================================================== #}
+<section class="home-section">
+  <div class="home-section__head reveal">
+    <div>
+      <h2 class="page-title">What our customers say</h2>
+      <p class="page-sub">Real reviews from verified purchases.</p>
+    </div>
+  </div>
+
+  {% if reviews %}
+  <div class="row g-3 g-lg-4">
+    {% for review in reviews %}
+    <div class="col-md-6 col-xl-3 reveal">
+      <div class="review-card">
+        {% include 'partials/_stars.html' with rating=review.rating %}
+        <p class="review-card__text">
+          “{{ review.comment|default:"Bought this recently — great quality and fast delivery!" }}”
+        </p>
+        <div class="review-card__meta">
+          <span class="review-card__avatar">{{ review.user.username|first|upper }}</span>
+          <div class="review-card__who">
+            <strong>{{ review.user.get_full_name|default:review.user.username }}</strong>
+            <small>on {{ review.product.name }}</small>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-center text-muted reveal">
+    Reviews will appear here as soon as customers start sharing their feedback.
+  </p>
+  {% endif %}
+</section>
+{% endblock %}

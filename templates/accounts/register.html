@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block title %}Create your account — ShopSphere{% endblock %}
+{% block meta_description %}Join ShopSphere: fast delivery, easy returns and exclusive member deals.{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="row g-4 align-items-stretch">
+
+    {# ---------------- the pitch ---------------- #}
+    <div class="col-lg-5 reveal">
+      <div class="auth-pitch">
+        <h1 class="page-title">Create your account</h1>
+        <p class="page-sub">
+          One account for everything — track orders, save your wishlist,
+          check out faster and never lose a review.
+        </p>
+        <ul class="auth-pitch__list">
+          <li><i class="bi bi-bag-heart"></i>Faster checkout with saved addresses</li>
+          <li><i class="bi bi-receipt"></i>Order history and easy returns</li>
+          <li><i class="bi bi-star"></i>Verified reviews on products you buy</li>
+          <li><i class="bi bi-tag"></i>Members-only coupons</li>
+        </ul>
+      </div>
+    </div>
+
+    {# ---------------- the form ---------------- #}
+    <div class="col-lg-7 reveal">
+      <div class="card-ss auth-card p-4 p-lg-5">
+        <h2 class="auth-card__title mb-1">Sign up</h2>
+        <p class="text-muted mb-4">Takes less than a minute.</p>
+
+        <form class="form-ss" method="post" novalidate>
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+          <div class="alert alert-ss alert-ss--danger py-2">
+            {{ form.non_field_errors.0 }}
+          </div>
+          {% endif %}
+
+          {% for field in form %}
+          <div class="mb-3">
+            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}
+            <div class="form-text">{{ field.help_text|safe }}</div>
+            {% endif %}
+            {% for error in field.errors %}
+            <div class="form-text text-danger">{{ error }}</div>
+            {% endfor %}
+          </div>
+          {% endfor %}
+
+          <button type="submit" class="btn btn-ss-primary btn-lg w-100 mt-2">
+            <i class="bi bi-person-plus me-2"></i>Create account
+          </button>
+        </form>
+
+        <p class="text-center text-muted mt-4 mb-0">
+          Already have an account?
+          <a class="fw-semibold" href="{% url 'login' %}">Log in</a>
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

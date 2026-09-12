@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}My orders — ShopSphere{% endblock %}
+{% block meta_description %}Track your ShopSphere orders: status, items and delivery details.{% endblock %}
+
+{% block content %}
+{# ---------------- breadcrumbs ---------------- #}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb ss-breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+    <li class="breadcrumb-item active" aria-current="page">My orders</li>
+  </ol>
+</nav>
+
+<div class="shop-header d-flex flex-wrap align-items-end justify-content-between gap-2 mb-4">
+  <div class="reveal">
+    <h1 class="page-title mb-1">My orders</h1>
+    <p class="page-sub mb-0">
+      {% if rows %}
+        {{ rows|length }} order{{ rows|length|pluralize }} — track status, or
+        cancel while an order is still Pending.
+      {% else %}
+        Everything you order will show up here.
+      {% endif %}
+    </p>
+  </div>
+  <a class="btn btn-ss-ghost" href="{% url 'products:shop' %}">
+    <i class="bi bi-bag-plus me-1"></i>Continue shopping
+  </a>
+</div>
+
+{% if rows %}
+<div class="order-list">
+  {% for row in rows %}
+  {% with order=row.order %}
+  <div class="card-ss order-row reveal">
+    <div class="order-row__meta">
+      <a href="{% url 'orders:order_detail' order.order_number %}">
+        <strong>{{ order.order_number }}</strong>
+      </a>
+      <span class="text-muted">{{ order.created_at|date:"d M Y, H:i" }}</span>
+    </div>
+
+    <div class="order-row__items" aria-hidden="true">
+      {% for item in row.thumbs %}
+      <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}"
+           title="{{ item.product.name }}" loading="lazy">
+      {% endfor %}
+      {% if row.extra %}<span class="order-row__more">+{{ row.extra }}</span>{% endif %}
+    </div>
+
+    <div class="order-row__total">₹{{ order.grand_total }}</div>
+
+    <span class="order-badge order-badge--{{ order.order_status }}">
+      {{ order.get_order_status_display }}
+    </span>
+
+    <a class="btn btn-ss-ghost btn-sm order-row__btn"
+       href="{% url 'orders:order_detail' order.order_number %}">
+      View <i class="bi bi-arrow-right"></i>
+    </a>
+  </div>
+  {% endwith %}
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state reveal">
+  <div class="empty-state__icon"><i class="bi bi-receipt"></i></div>
+  <h3 class="empty-state__title">No orders yet</h3>
+  <p class="empty-state__text">
+    When you place your first order, you'll be able to track it right here.
+  </p>
+  <a class="btn btn-ss-primary btn-lg" href="{% url 'products:shop' %}">
+    <i class="bi bi-bag-plus me-1"></i>Browse products
+  </a>
+</div>
+{% endif %}
+{% endblock %}

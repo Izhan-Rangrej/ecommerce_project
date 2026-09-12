@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Checkout — ShopSphere{% endblock %}
+{% block meta_description %}Complete your ShopSphere order in five steps: address, delivery, payment, review, done.{% endblock %}
+
+{% block content %}
+{# ---------------- breadcrumbs ---------------- #}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb ss-breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'cart:page' %}">Cart</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Checkout</li>
+  </ol>
+</nav>
+
+<div class="shop-header d-flex flex-wrap align-items-end justify-content-between gap-2 mb-4">
+  <div class="reveal">
+    <h1 class="page-title mb-1">Checkout</h1>
+    <p class="page-sub mb-0">
+      <i class="bi bi-shield-lock me-1"></i>Five quick steps between you and your order.
+    </p>
+  </div>
+</div>
+
+{% include 'checkout/_stepper.html' %}
+
+<div class="row g-4 g-lg-5">
+
+  {# ================= THE CURRENT STEP ================= #}
+  <div class="col-lg-7">
+    {% if step == 1 %}
+      {% include 'checkout/_address_step.html' %}
+    {% elif step == 2 %}
+      {% include 'checkout/_delivery_step.html' %}
+    {% elif step == 3 %}
+      {% include 'checkout/_payment_step.html' %}
+    {% else %}
+      {% include 'checkout/_review_step.html' %}
+    {% endif %}
+  </div>
+
+  {# ================= LIVE SUMMARY ================= #}
+  <div class="col-lg-5">
+    {% include 'checkout/_summary.html' %}
+  </div>
+
+</div>
+{% endblock %}

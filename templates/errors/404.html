@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Page not found — ShopSphere{% endblock %}
+{% block meta_description %}The page you are looking for does not exist on ShopSphere.{% endblock %}
+
+{% block content %}
+<div class="error-page text-center">
+  <div class="error-page__code" aria-hidden="true">404</div>
+  <h1 class="page-title">Oops! This page took a vacation.</h1>
+  <p class="page-sub">
+    The page you're looking for doesn't exist or has moved to a new address.
+  </p>
+  <div class="error-page__actions">
+    <a class="btn btn-ss-primary btn-lg" href="{% url 'products:search' %}">
+      <i class="bi bi-search me-2"></i>Search products
+    </a>
+    <a class="btn btn-ss-ghost btn-lg" href="/">
+      <i class="bi bi-house me-2"></i>Back to Home
+    </a>
+  </div>
+</div>
+{% endblock %}

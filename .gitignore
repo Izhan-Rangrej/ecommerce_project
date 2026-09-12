@@ -1,0 +1,23 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# ---- Virtual environment (never commit this) ----
+venv/
+.venv/
+
+# ---- Django ----
+db.sqlite3
+media/*
+!media/.gitkeep
+staticfiles/
+
+# ---- Environment / secrets (NEVER commit real keys) ----
+.env
+
+# ---- OS / editor noise ----
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

@@ -1,0 +1,65 @@
+{# partials/_product_card.html — the product card (search, shop, home). #}
+{# Usage (wrap in a grid column): #}
+{#   <div class="col reveal">{% include 'partials/_product_card.html' with product=product %}</div> #}
+{# Optional context: rating (float, e.g. 4.2), count (number of reviews). #}
+<div class="product-card h-100">
+
+  <div class="product-card__media">
+    <a href="{% url 'products:detail' product.slug %}" tabindex="-1" aria-hidden="true">
+      <img src="{{ product.image.url }}" alt="{{ product.name }}" loading="lazy">
+    </a>
+
+    {% if product.is_on_sale %}
+    <span class="badge-sale">-{{ product.discount_percentage }}%</span>
+    {% endif %}
+    {% if not product.is_available %}
+    <span class="badge-oos">Out of stock</span>
+    {% endif %}
+
+    <button type="button" class="btn-wishlist"
+            data-wishlist-toggle data-product-id="{{ product.id }}"
+            data-product-slug="{{ product.slug }}"
+            title="Add to wishlist" aria-label="Add {{ product.name }} to wishlist">
+      <i class="bi bi-heart"></i>
+    </button>
+  </div>
+
+  <div class="product-card__body">
+    <span class="product-card__category">{{ product.category.name }}</span>
+    <h3 class="product-card__title">
+      <a href="{% url 'products:detail' product.slug %}">{{ product.name }}</a>
+    </h3>
+    {% include 'partials/_stars.html' with rating=rating count=count %}
+
+    <div class="product-card__price">
+      {% if product.is_on_sale %}
+      <span class="price-old">₹{{ product.price }}</span>
+      {% endif %}
+      <span class="price-now">₹{{ product.final_price }}</span>
+    </div>
+  </div>
+
+  <div class="product-card__actions">
+    {% if product.is_available %}
+    {# Works with JS (fetch + toast) and without (classic POST + redirect) #}
+    <form data-cart-add method="post" action="{% url 'cart:add' product.id %}" class="d-flex gap-2">
+      {% csrf_token %}
+      <input type="number" name="quantity" value="1" min="1"
+             max="{{ product.stock }}" class="form-control form-control-sm qty-input"
+             aria-label="Quantity of {{ product.name }}">
+      <button type="submit" class="btn btn-ss-primary btn-sm flex-grow-1">
+        <i class="bi bi-bag-plus me-1"></i>Add
+      </button>
+    </form>
+    {% else %}
+    <button type="button" class="btn btn-ss-primary btn-sm w-100" disabled>
+      Out of stock
+    </button>
+    {% endif %}
+
+    <a href="{% url 'products:detail' product.slug %}" class="btn btn-ss-ghost btn-sm"
+       title="View details" aria-label="View details of {{ product.name }}">
+      <i class="bi bi-eye"></i>
+    </a>
+  </div>
+</div>

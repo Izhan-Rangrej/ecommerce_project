@@ -1,0 +1,66 @@
+{# Step 1 — shipping address.
+   Context: addresses, selected_address, address_form.
+   One <form> handles BOTH actions:
+     * radio selected  -> picks a saved address
+     * form filled     -> creates a new one (the details block is plain
+                          HTML, so it works without JavaScript) #}
+<div class="card-ss p-4 p-lg-5 ck-step-card reveal">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <h2 class="auth-card__title mb-0">Shipping address</h2>
+    <a class="btn btn-ss-ghost btn-sm" href="{% url 'customers:addresses' %}">
+      <i class="bi bi-book me-1"></i>Manage addresses
+    </a>
+  </div>
+
+  <form method="post" action="{% url 'orders:checkout_address' %}" novalidate>
+    {% csrf_token %}
+
+    {% if addresses %}
+    <div class="ck-addr-list">
+      {% for address in addresses %}
+      <label class="ck-addr{% if address.pk == selected_address.pk %} ck-addr--selected{% endif %}">
+        <input type="radio" name="address_id" value="{{ address.pk }}"
+               {% if address.pk == selected_address.pk %}checked{% endif %}>
+        <span class="ck-addr__body">
+          <span class="ck-addr__top">
+            <strong>{{ address.full_name }}</strong>
+            {% if address.label %}<span class="ck-addr__badge">{{ address.label }}</span>{% endif %}
+            {% if address.is_default %}<span class="ck-addr__badge ck-addr__badge--muted">Default</span>{% endif %}
+            <span class="text-muted ms-auto d-none d-sm-inline">{{ address.phone }}</span>
+          </span>
+          <span class="ck-addr__lines">{{ address.address_line_1 }}{% if address.address_line_2 %}, {{ address.address_line_2 }}{% endif %}</span>
+          <span class="ck-addr__lines">{{ address.city }}, {{ address.state }} — {{ address.pincode }}, {{ address.country }}</span>
+        </span>
+      </label>
+      {% endfor %}
+    </div>
+
+    <details class="ck-addr-new">
+      <summary><i class="bi bi-plus-circle me-1"></i>Add a new address</summary>
+      <div class="ck-addr-new__inner">
+        {% include 'checkout/_address_fields.html' with form=address_form %}
+        <p class="form-text mb-0">
+          This address will be used for this order and saved to your account.
+        </p>
+      </div>
+    </details>
+
+    <div class="d-flex flex-wrap gap-2 mt-4">
+      <button type="submit" class="btn btn-ss-primary">
+        Continue to delivery <i class="bi bi-arrow-right ms-1"></i>
+      </button>
+    </div>
+    {% else %}
+    <p class="text-muted">
+      You don't have a saved address yet — add one below. It will also be
+      saved to your account for next time.
+    </p>
+    {% include 'checkout/_address_fields.html' with form=address_form %}
+    <div class="d-flex flex-wrap gap-2 mt-4">
+      <button type="submit" class="btn btn-ss-primary">
+        Save address &amp; continue <i class="bi bi-arrow-right ms-1"></i>
+      </button>
+    </div>
+    {% endif %}
+  </form>
+</div>

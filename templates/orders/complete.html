@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}Order placed — {{ order.order_number }} — ShopSphere{% endblock %}
+{% block meta_description %}Your ShopSphere order {{ order.order_number }} was placed successfully.{% endblock %}
+
+{% block content %}
+{# ---------------- breadcrumbs ---------------- #}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb ss-breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Order placed</li>
+  </ol>
+</nav>
+
+<div class="shop-header mb-4">
+  <div class="reveal">
+    <h1 class="page-title mb-1">Checkout</h1>
+    <p class="page-sub mb-0">Step 5 of 5 — you're done!</p>
+  </div>
+</div>
+
+{% include 'checkout/_stepper.html' %}
+
+<div class="order-complete reveal">
+  <div class="order-complete__icon" aria-hidden="true"><i class="bi bi-check-lg"></i></div>
+  <h2 class="order-complete__title">
+    Thank you{{ user.first_name|default:'' }} — your order is confirmed!
+  </h2>
+  <p class="order-complete__sub">
+    Order <strong>{{ order.order_number }}</strong>
+    · placed {{ order.created_at|date:"d M Y, H:i" }}
+    · status: {{ order.get_order_status_display }}
+  </p>
+</div>
+
+<div class="row g-4 g-lg-5">
+
+  {# ================= ITEMS + ADDRESS + NEXT STEPS ================= #}
+  <div class="col-lg-7">
+    <div class="card-ss p-4 p-lg-4 reveal">
+      <h3 class="auth-card__title">Items</h3>
+      <ul class="review-items">
+        {% for item in items %}
+        <li>
+          <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" loading="lazy">
+          <div class="review-items__info">
+            <a href="{% url 'products:detail' item.product.slug %}">{{ item.product.name }}</a>
+            <span>Qty {{ item.quantity }} × ₹{{ item.unit_price }}</span>
+          </div>
+          <strong>₹{{ item.subtotal }}</strong>
+        </li>
+        {% endfor %}
+      </ul>
+
+      <div class="review-block mt-4 mb-0">
+        <div class="review-block__head"><h3>Shipping address</h3></div>
+        <div class="review-block__body">
+          <strong>{{ order.billing_name }}</strong>
+          <span class="text-muted">· {{ order.billing_phone }}</span><br>
+          {{ order.billing_address_1 }}
+          {% if order.billing_address_2 %}, {{ order.billing_address_2 }}{% endif %}<br>
+          {{ order.billing_city }}, {{ order.billing_state }}
+          — {{ order.billing_pincode }}, {{ order.billing_country }}
+        </div>
+      </div>
+
+      {% if order.notes %}
+      <div class="review-block mt-3 mb-0">
+        <div class="review-block__head"><h3>Your delivery notes</h3></div>
+        <div class="review-block__body">{{ order.notes }}</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="card-ss p-4 mt-4 reveal">
+      <h3 class="auth-card__title">What happens next</h3>
+      <ol class="order-complete__next">
+        <li>We're confirming your order right now (status:
+          <strong>{{ order.get_order_status_display }}</strong>).</li>
+        {% if payment and payment.method == 'cod' %}
+        <li>Keep <strong>₹{{ payment.amount }}</strong> ready — you'll pay
+          the courier when your order arrives.</li>
+        {% else %}
+        <li>Watch your email for payment updates.</li>
+        {% endif %}
+        <li>Track this order anytime from
+          <a href="{% url 'orders:order_detail' order.order_number %}">
+          your order history</a>.</li>
+      </ol>
+    </div>
+  </div>
+
+  {# ================= PAYMENT + TOTALS ================= #}
+  <div class="col-lg-5">
+    <div class="card-ss p-4 reveal">
+      <h3 class="auth-card__title mb-3">Payment</h3>
+      <div class="cart-totals">
+        <div class="cart-totals__row">
+          <span>Subtotal</span>
+          <span>₹{{ order.subtotal }}</span>
+        </div>
+        {% if order.discount_amount > 0 %}
+        <div class="cart-totals__row cart-totals__row--save">
+          <span>Coupon discount</span>
+          <span>−₹{{ order.discount_amount }}</span>
+        </div>
+        {% endif %}
+        <div class="cart-totals__row">
+          <span>Shipping</span>
+          <span>
+            {% if order.shipping_charge == 0 %}
+            <strong class="text-success">FREE</strong>
+            {% else %}
+            ₹{{ order.shipping_charge }}
+            {% endif %}
+          </span>
+        </div>
+        <div class="cart-totals__row">
+          <span>Tax (5%)</span>
+          <span>₹{{ order.tax_amount }}</span>
+        </div>
+        <hr class="ss-divider my-2">
+        <div class="cart-totals__grand">
+          <span>Grand total</span>
+          <span>₹{{ order.grand_total }}</span>
+        </div>
+        <small class="text-muted d-block text-end">Inclusive of all taxes</small>
+      </div>
+
+      {% if payment %}
+      <div class="ck-pay-status mt-3">
+        {% if payment.method == 'cod' %}
+        <i class="bi bi-cash-coin me-1" aria-hidden="true"></i>
+        {% else %}
+        <i class="bi bi-credit-card me-1" aria-hidden="true"></i>
+        {% endif %}
+        {{ payment.get_method_display }} ·
+        <span class="badge {% if payment.status == 'paid' %}text-bg-success{% else %}text-bg-warning{% endif %}">
+          {{ payment.get_status_display }}
+        </span>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="d-grid gap-2 mt-3">
+      <a class="btn btn-ss-primary btn-lg" href="{% url 'products:shop' %}">
+        <i class="bi bi-bag-plus me-1"></i>Continue shopping
+      </a>
+      <a class="btn btn-ss-ghost" href="{% url 'core:home' %}">Back to home</a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

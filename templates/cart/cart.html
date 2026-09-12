@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+
+{% block title %}Your cart — ShopSphere{% endblock %}
+{% block meta_description %}Review your ShopSphere cart: items, quantities, shipping and total.{% endblock %}
+
+{% block content %}
+{# ---------------- breadcrumbs ---------------- #}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb ss-breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'products:shop' %}">Shop</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Cart</li>
+  </ol>
+</nav>
+
+<div class="shop-header d-flex flex-wrap align-items-end justify-content-between gap-2 mb-4">
+  <div class="reveal">
+    <h1 class="page-title mb-1">Your cart</h1>
+    <p class="page-sub mb-0">
+      {% if cart_empty %}
+        Nothing here yet — your cart is empty.
+      {% else %}
+        {{ cart_count }} item{{ cart_count|pluralize }} in your cart.
+      {% endif %}
+    </p>
+  </div>
+</div>
+
+{% if cart_empty %}
+{# ---------------- empty state ---------------- #}
+<div class="empty-state reveal">
+  <div class="empty-state__icon"><i class="bi bi-bag"></i></div>
+  <h3 class="empty-state__title">Your cart is empty</h3>
+  <p class="empty-state__text">
+    Looks like you haven't added anything yet — the sale is waiting.
+  </p>
+  <a class="btn btn-ss-primary btn-lg" href="{% url 'products:shop' %}">
+    <i class="bi bi-bag-plus me-1"></i>Browse products
+  </a>
+</div>
+
+{% else %}
+{# ---------------- cart layout ---------------- #}
+<div class="row g-4 g-lg-5">
+
+  {# ================= LINES ================= #}
+  <div class="col-lg-8">
+    <div class="cart-lines">
+      {% for line in lines %}
+      <div class="cart-line{% if line.oos %} cart-line--oos{% endif %} reveal"
+           data-cart-row="{{ line.product.id }}">
+        <div class="cart-line__media">
+          <a href="{% url 'products:detail' line.product.slug %}" tabindex="-1" aria-hidden="true">
+            <img src="{{ line.product.image.url }}" alt="{{ line.product.name }}" loading="lazy">
+          </a>
+        </div>
+
+        <div class="cart-line__info">
+          <a href="{% url 'products:detail' line.product.slug %}">{{ line.product.name }}</a>
+          <span class="cart-line__meta">
+            {{ line.product.category.name }}
+            {% if line.product.brand %} · {{ line.product.brand.name }}{% endif %}
+          </span>
+          {% if line.oos %}
+          <span class="badge-oos">Out of stock</span>
+          {% else %}
+          <span class="cart-line__unit" data-unit-price>₹{{ line.product.final_price }} each</span>
+          {% endif %}
+        </div>
+
+        <div class="cart-line__qty">
+          {% if line.oos %}
+          <span class="text-muted">—</span>
+          {% else %}
+          {# No-JS: change the number, press Update (classic POST).
+             With JS: the +/− steppers update in place (see main.js). #}
+          <form method="post" action="{% url 'cart:update' line.product.id %}"
+                data-cart-update class="d-flex align-items-center gap-2">
+            {% csrf_token %}
+            <div class="qty-selector qty-selector--mini" aria-label="Quantity of {{ line.product.name }}">
+              <button type="button" data-cart-step="-1" aria-label="Decrease quantity">&minus;</button>
+              <input type="number" name="quantity" value="{{ line.qty }}"
+                     min="1" max="{{ line.product.stock }}" aria-label="Quantity">
+              <button type="button" data-cart-step="1" aria-label="Increase quantity">+</button>
+            </div>
+            <button type="submit" class="btn btn-ss-ghost btn-sm">Update</button>
+          </form>
+          {% endif %}
+        </div>
+
+        <div class="cart-line__total" data-line-total>
+          {% if line.oos %}<span class="text-muted">—</span>{% else %}₹{{ line.line_total }}{% endif %}
+        </div>
+
+        <div class="cart-line__actions">
+          <form method="post" action="{% url 'cart:remove' line.product.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="/cart/">
+            <button type="submit" class="btn btn-ss-danger btn-sm"
+                    title="Remove {{ line.product.name }}" aria-label="Remove {{ line.product.name }} from cart">
+              <i class="bi bi-trash"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="mt-3 d-flex flex-wrap gap-3">
+      <a class="btn btn-ss-ghost" href="{% url 'products:shop' %}">
+        <i class="bi bi-arrow-left me-1"></i>Continue shopping
+      </a>
+      {# Clear cart: plain form, works without JS; JS intercepts in a later phase. #}
+      <form method="post" action="{% url 'cart:clear' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-ss-ghost text-danger"
+                onclick="return confirm('Remove everything from your cart?');">
+          <i class="bi bi-trash3 me-1"></i>Clear cart
+        </button>
+      </form>
+    </div>
+  </div>
+
+  {# ================= SUMMARY ================= #}
+  <div class="col-lg-4">
+    <div class="card-ss cart-summary p-4 reveal">
+      <h2 class="auth-card__title mb-4">Order summary</h2>
+
+      <div class="cart-totals">
+        <div class="cart-totals__row">
+          <span>Subtotal ({{ cart_count }} item{{ cart_count|pluralize }})</span>
+          <span id="cart-subtotal">₹{{ totals.subtotal }}</span>
+        </div>
+        {% if totals.discount > 0 %}
+        <div class="cart-totals__row cart-totals__row--save">
+          <span>Coupon discount</span>
+          <span id="cart-discount">−₹{{ totals.discount }}</span>
+        </div>
+        {% endif %}
+        <div class="cart-totals__row">
+          <span>Shipping</span>
+          <span id="cart-shipping">
+            {% if totals.shipping == 0 %}<strong class="text-success">FREE</strong>
+            {% else %}₹{{ totals.shipping }}{% endif %}
+          </span>
+        </div>
+        <div class="cart-totals__row">
+          <span>Tax (5%)</span>
+          <span id="cart-tax">₹{{ totals.tax }}</span>
+        </div>
+        <hr class="ss-divider my-2">
+        <div class="cart-totals__grand">
+          <span>Grand total</span>
+          <span id="cart-grand">₹{{ totals.grand_total }}</span>
+        </div>
+        <small class="text-muted d-block text-end">Inclusive of all taxes</small>
+      </div>
+
+      {# free-shipping progress (JS updates it in place) #}
+      <div class="free-ship{% if shipping.reached %} free-ship--done{% endif %}" id="free-ship">
+        <div class="free-ship__label" id="free-ship-label">
+          {% if shipping.reached %}
+          <i class="bi bi-truck me-1"></i>You've unlocked FREE shipping!
+          {% else %}
+          Add <strong>₹{{ shipping.remaining }}</strong> more for FREE shipping
+          {% endif %}
+        </div>
+        <div class="free-ship__bar">
+          <div class="free-ship__fill" id="free-ship-fill"
+               style="width: {{ shipping.percent }}%"></div>
+        </div>
+      </div>
+
+      <p class="cart-summary__note">
+        <i class="bi bi-ticket-perforated me-1"></i>Have a coupon code? You can apply it at checkout.
+      </p>
+
+      {% if has_oos %}
+      <button type="button" class="btn btn-ss-primary btn-lg w-100" disabled>
+        <i class="bi bi-lock me-2"></i>Checkout
+      </button>
+      <p class="text-danger small text-center mt-2 mb-0">
+        Remove out-of-stock items to continue.
+      </p>
+      {% elif user.is_authenticated %}
+      <a class="btn btn-ss-primary btn-lg w-100" href="{% url 'orders:checkout' %}">
+        Proceed to Checkout <i class="bi bi-arrow-right ms-1"></i>
+      </a>
+      {% else %}
+      <a class="btn btn-ss-primary btn-lg w-100"
+         href="{% url 'login' %}?next=/cart/">
+        Log in to check out <i class="bi bi-arrow-right ms-1"></i>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endif %}
+{% endblock %}

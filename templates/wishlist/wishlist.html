@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block title %}My wishlist — ShopSphere{% endblock %}
+{% block meta_description %}Products you saved for later at ShopSphere.{% endblock %}
+
+{% block content %}
+{# ---------------- breadcrumbs ---------------- #}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb ss-breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'products:shop' %}">Shop</a></li>
+    <li class="breadcrumb-item active" aria-current="page">My wishlist</li>
+  </ol>
+</nav>
+
+<div class="shop-header d-flex flex-wrap align-items-end justify-content-between gap-2 mb-4">
+  <div class="reveal">
+    <h1 class="page-title mb-1">My wishlist</h1>
+    <p class="page-sub mb-0" id="wish-count">
+      {% if wishlist_count %}
+        {{ wishlist_count }} item{{ wishlist_count|pluralize }} saved for later.
+      {% else %}
+        Your wishlist is empty.
+      {% endif %}
+    </p>
+  </div>
+  <a class="btn btn-ss-ghost" href="{% url 'products:shop' %}">
+    <i class="bi bi-arrow-left me-1"></i>Continue shopping
+  </a>
+</div>
+
+{% if items %}
+<div class="cart-lines" id="wish-grid">
+  {% for item in items %}
+  {% with product=item.product %}
+  <div class="cart-line{% if not product.active or not product.is_available %} cart-line--oos{% endif %} reveal"
+       data-wish-row="{{ product.id }}">
+    <div class="cart-line__media">
+      <a href="{% url 'products:detail' product.slug %}" tabindex="-1" aria-hidden="true">
+        <img src="{{ product.image.url }}" alt="{{ product.name }}" loading="lazy">
+      </a>
+    </div>
+
+    <div class="cart-line__info">
+      <a href="{% url 'products:detail' product.slug %}">{{ product.name }}</a>
+      <span class="cart-line__meta">
+        {{ product.category.name }}
+        {% if product.brand %} · {{ product.brand.name }}{% endif %}
+      </span>
+      {% if item.avg_rating %}
+      {% include 'partials/_stars.html' with rating=item.avg_rating count=item.review_count %}
+      {% endif %}
+      <span class="cart-line__unit">
+        {% if product.is_on_sale %}
+        <span class="price-old">₹{{ product.price }}</span>
+        {% endif %}
+        <strong>₹{{ product.final_price }}</strong>
+      </span>
+    </div>
+
+    <div class="cart-line__qty">
+      {% if not product.active %}
+      <span class="badge-oos">No longer available</span>
+      {% elif not product.is_available %}
+      <span class="badge-oos">Out of stock</span>
+      {% elif product.stock <= 5 %}
+      <span class="stock-chip stock-chip--low">
+        <i class="bi bi-exclamation-circle"></i>Only {{ product.stock }} left
+      </span>
+      {% else %}
+      <span class="stock-chip stock-chip--ok">
+        <i class="bi bi-check-circle"></i>In stock
+      </span>
+      {% endif %}
+    </div>
+
+    <div class="cart-line__total"></div>
+
+    <div class="cart-line__actions">
+      <div class="d-flex flex-wrap gap-2 justify-content-end">
+        {% if product.active and product.is_available %}
+        <form method="post" action="{% url 'customers:wishlist_move' product.id %}"
+              data-wish-move>
+          {% csrf_token %}
+          <button type="submit" class="btn btn-ss-primary btn-sm">
+            <i class="bi bi-bag-plus me-1"></i>Move to cart
+          </button>
+        </form>
+        {% endif %}
+        <form method="post" action="{% url 'customers:wishlist_remove' product.id %}"
+              data-wish-remove>
+          {% csrf_token %}
+          <button type="submit" class="btn btn-ss-danger btn-sm"
+                  title="Remove {{ product.name }} from wishlist"
+                  aria-label="Remove {{ product.name }} from wishlist">
+            <i class="bi bi-trash me-1"></i>Remove
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endwith %}
+  {% endfor %}
+</div>
+
+{# Shown by main.js when the last row is removed without a page reload. #}
+<div class="empty-state d-none" id="wish-empty">
+  <div class="empty-state__icon"><i class="bi bi-heart"></i></div>
+  <h3 class="empty-state__title">Your wishlist is empty</h3>
+  <p class="empty-state__text">
+    Tap the <i class="bi bi-heart-fill"></i> on any product to save it here
+    for later.
+  </p>
+  <a class="btn btn-ss-primary btn-lg" href="{% url 'products:shop' %}">
+    <i class="bi bi-bag-plus me-1"></i>Browse products
+  </a>
+</div>
+
+{% else %}
+<div class="empty-state reveal" id="wish-empty">
+  <div class="empty-state__icon"><i class="bi bi-heart"></i></div>
+  <h3 class="empty-state__title">Your wishlist is empty</h3>
+  <p class="empty-state__text">
+    Tap the <i class="bi bi-heart-fill"></i> on any product to save it here
+    for later.
+  </p>
+  <a class="btn btn-ss-primary btn-lg" href="{% url 'products:shop' %}">
+    <i class="bi bi-bag-plus me-1"></i>Browse products
+  </a>
+</div>
+{% endif %}
+{% endblock %}

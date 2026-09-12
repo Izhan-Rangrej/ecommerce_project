@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} — ShopSphere{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="row justify-content-center">
+    <div class="col-md-9 col-lg-6 reveal">
+      <div class="card-ss auth-card p-4 p-lg-5">
+        <h1 class="auth-card__title mb-1">{{ page_title }}</h1>
+        <p class="text-muted mb-4">
+          We use this to deliver your orders — double-check the PIN code and
+          phone number.
+        </p>
+
+        <form class="form-ss" method="post" novalidate>
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+          <div class="alert alert-ss alert-ss--danger py-2">
+            {{ form.non_field_errors.0 }}
+          </div>
+          {% endif %}
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" for="{{ form.label.id_for_label }}">{{ form.label.label }}</label>
+              {{ form.label }}
+              {% for error in form.label.errors %}<div class="form-text text-danger">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="{{ form.phone.id_for_label }}">{{ form.phone.label }}</label>
+              {{ form.phone }}
+              <div class="form-text">{{ form.phone.help_text }}</div>
+              {% for error in form.phone.errors %}<div class="form-text text-danger">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="col-12">
+              <label class="form-label" for="{{ form.full_name.id_for_label }}">{{ form.full_name.label }}</label>
+              {{ form.full_name }}
+              {% for error in form.full_name.errors %}<div class="form-text text-danger">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="col-12">
+              <label class="form-label" for="{{ form.address_line_1.id_for_label }}">{{ form.address_line_1.label }}</label>
+              {{ form.address_line_1 }}
+              {% for error in form.address_line_1.errors %}<div class="form-text text-danger">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="col-12">
+              <label class="form-label" for="{{ form.address_line_2.id_for_label }}">{{ form.address_line_2.label }}</label>
+              {{ form.address_line_2 }}
+              {% for error in form.address_line_2.errors %}<div class="form-text text-danger">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="col-md-5">
+              <label class="form-label" for="{{ form.city.id_for_label }}">{{ form.city.label }}</label>
+              {{ form.city }}
+              {% for error in form.city.errors %}<div class="form-text text-danger">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" for="{{ form.state.id_for_label }}">{{ form.state.label }}</label>
+              {{ form.state }}
+              {% for error in form.state.errors %}<div class="form-text text-danger">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label" for="{{ form.pincode.id_for_label }}">{{ form.pincode.label }}</label>
+              {{ form.pincode }}
+              {% for error in form.pincode.errors %}<div class="form-text text-danger">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="col-12">
+              <label class="form-label" for="{{ form.country.id_for_label }}">{{ form.country.label }}</label>
+              {{ form.country }}
+              {% for error in form.country.errors %}<div class="form-text text-danger">{{ error }}</div>{% endfor %}
+            </div>
+          </div>
+
+          <div class="d-flex flex-wrap gap-2 mt-4">
+            <button type="submit" class="btn btn-ss-primary">
+              <i class="bi bi-check-lg me-1"></i>Save address
+            </button>
+            <a class="btn btn-ss-ghost" href="{% url 'customers:addresses' %}">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

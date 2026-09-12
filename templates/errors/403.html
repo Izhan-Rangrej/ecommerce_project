@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Access denied — ShopSphere{% endblock %}
+
+{% block content %}
+<div class="error-page text-center">
+  <div class="error-page__code" aria-hidden="true">403</div>
+  <h1 class="page-title">Permission denied</h1>
+  <p class="page-sub">
+    You don't have permission to view this page. If you think this is a
+    mistake, please contact our support team.
+  </p>
+  <div class="error-page__actions">
+    <a class="btn btn-ss-primary btn-lg" href="/">
+      <i class="bi bi-house me-2"></i>Back to Home
+    </a>
+    <a class="btn btn-ss-ghost btn-lg" href="{% url 'core:contact' %}">
+      <i class="bi bi-envelope me-2"></i>Contact support
+    </a>
+  </div>
+</div>
+{% endblock %}

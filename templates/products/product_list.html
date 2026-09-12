@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% load shop_tags %}
+
+{% block title %}{{ list_title }} — ShopSphere{% endblock %}
+{% block meta_description %}{{ list_subtitle }}{% endblock %}
+{% block og_title %}{{ list_title }} — ShopSphere{% endblock %}
+
+{% block content %}
+{# ====================================================================== #}
+{# BREADCRUMBS                                                            #}
+{# ====================================================================== #}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb ss-breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+    {% if list_category %}
+    <li class="breadcrumb-item"><a href="{% url 'products:shop' %}">Shop</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ list_category.name }}</li>
+    {% else %}
+    <li class="breadcrumb-item active" aria-current="page">{{ list_title }}</li>
+    {% endif %}
+  </ol>
+</nav>
+
+{# ====================================================================== #}
+{# PAGE HEADER                                                            #}
+{# ====================================================================== #}
+<div class="shop-header d-flex flex-wrap align-items-end justify-content-between gap-2 mb-4">
+  <div class="reveal">
+    <h1 class="page-title mb-1">{{ list_title }}</h1>
+    <p class="page-sub mb-0">{{ list_subtitle }}</p>
+  </div>
+  {% if result_count > 0 %}
+  <span class="shop-header__count reveal">
+    {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ result_count }}
+  </span>
+  {% endif %}
+</div>
+
+<div class="row g-4 g-lg-5">
+
+  {# ==================================================================== #}
+  {# FILTER SIDEBAR (stacks above the grid on mobile — no JS needed)     #}
+  {# ==================================================================== #}
+  <aside class="col-lg-3">
+    <div class="filters reveal">
+
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="filters__title"><i class="bi bi-funnel me-1"></i>Filters</h2>
+        {% if has_filters %}
+        <a class="filters__clear" href="{% link 'products:shop' category='' brand='' min='' max='' rating='' q='' %}">
+          Clear all <i class="bi bi-x-lg"></i>
+        </a>
+        {% endif %}
+      </div>
+
+      {# ---------------- search inside the listing ---------------- #}
+      <form method="get"
+            action="{% if list_category %}{% url 'products:category' list_category.slug %}{% else %}{% url 'products:shop' %}{% endif %}"
+            class="filter-search mb-4" role="search">
+        {% if active_category %}<input type="hidden" name="category" value="{{ active_category.slug }}">{% endif %}
+        {% if active_brand %}<input type="hidden" name="brand" value="{{ active_brand.slug }}">{% endif %}
+        {% if price_min is not None %}<input type="hidden" name="min" value="{{ price_min }}">{% endif %}
+        {% if price_max is not None %}<input type="hidden" name="max" value="{{ price_max }}">{% endif %}
+        {% if min_rating %}<input type="hidden" name="rating" value="{{ min_rating }}">{% endif %}
+        <input type="search" name="q" class="form-control form-ss"
+               placeholder="Search in this list…" value="{{ q }}" aria-label="Search products">
+      </form>
+
+      <div class="filter-divider"></div>
+
+      {# ---------------- category group (hidden on category pages) ---------------- #}
+      {% if not list_category %}
+      <div class="filter-group">
+        <h3 class="filter-group__title">Category</h3>
+        <a class="filter-link{% if not active_category %} filter-link--active{% endif %}"
+           href="{% link 'products:shop' category='' %}">
+          All products
+        </a>
+        {% for category in categories %}
+        <a class="filter-link{% if active_category and active_category.slug == category.slug %} filter-link--active{% endif %}"
+           href="{% link 'products:shop' category=category.slug %}">
+          <span>{{ category.name }}</span>
+          <span class="filter-link__count">{{ category.count }}</span>
+        </a>
+        {% endfor %}
+      </div>
+      <div class="filter-divider"></div>
+      {% endif %}
+
+      {# ---------------- brand group ---------------- #}
+      <div class="filter-group">
+        <h3 class="filter-group__title">Brand</h3>
+        {% if active_brand %}
+        <a class="filter-link" href="{% link 'products:shop' brand='' %}">All brands</a>
+        {% endif %}
+        {% for brand in brands %}
+        <a class="filter-link{% if active_brand and active_brand.slug == brand.slug %} filter-link--active{% endif %}"
+           href="{% link 'products:shop' brand=brand.slug %}">
+          <span>{{ brand.name }}</span>
+          <span class="filter-link__count">{{ brand.count }}</span>
+        </a>
+        {% endfor %}
+      </div>
+      <div class="filter-divider"></div>
+
+      {# ---------------- price group ---------------- #}
+      <div class="filter-group">
+        <h3 class="filter-group__title">Price</h3>
+        <form method="get"
+              action="{% if list_category %}{% url 'products:category' list_category.slug %}{% else %}{% url 'products:shop' %}{% endif %}"
+              class="filter-price">
+          {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+          {% if active_category %}<input type="hidden" name="category" value="{{ active_category.slug }}">{% endif %}
+          {% if active_brand %}<input type="hidden" name="brand" value="{{ active_brand.slug }}">{% endif %}
+          {% if min_rating %}<input type="hidden" name="rating" value="{{ min_rating }}">{% endif %}
+          <div class="input-group input-group-sm">
+            <span class="input-group-text">₹</span>
+            <input type="number" name="min" class="form-control" min="0"
+                   placeholder="Min" value="{{ price_min|default_if_none:'' }}" aria-label="Minimum price">
+            <span class="input-group-text">–</span>
+            <input type="number" name="max" class="form-control" min="0"
+                   placeholder="Max" value="{{ price_max|default_if_none:'' }}" aria-label="Maximum price">
+          </div>
+          <button type="submit" class="btn btn-ss-ghost btn-sm w-100 mt-2">
+            Apply price
+          </button>
+          {% if price_min is not None or price_max is not None %}
+          <a class="filter-price__clear" href="{% link 'products:shop' min='' max='' %}">Reset price</a>
+          {% endif %}
+        </form>
+      </div>
+      <div class="filter-divider"></div>
+
+      {# ---------------- rating group ---------------- #}
+      <div class="filter-group">
+        <h3 class="filter-group__title">Customer rating</h3>
+        {% for star in rating_choices %}
+        <a class="filter-link{% if min_rating == star %} filter-link--active{% endif %}"
+           href="{% link 'products:shop' rating=star %}">
+          <span class="stars" style="--rating: {{ star }}" aria-hidden="true">
+            <span class="stars__bg">★★★★★</span>
+            <span class="stars__fg" style="width: 100%">★★★★★</span>
+          </span>
+          <span class="ms-1">&amp; up</span>
+          {% if min_rating == star %}
+          <span class="ms-auto" title="Remove" role="presentation"><i class="bi bi-x"></i></span>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
+
+    </div>
+  </aside>
+
+  {# ==================================================================== #}
+  {# RESULTS                                                              #}
+  {# ==================================================================== #}
+  <div class="col-lg-9">
+
+    {# ---------- active filter chips ---------- #}
+    {% if has_filters %}
+    <div class="chips mb-3 reveal">
+      {% if q %}
+      <span class="chip"><i class="bi bi-search me-1"></i>“{{ q }}”
+        <a href="{% link 'products:shop' q='' %}" aria-label="Remove search term">&times;</a></span>
+      {% endif %}
+      {% if active_category %}
+      <span class="chip"><i class="bi bi-tag me-1"></i>{{ active_category.name }}
+        <a href="{% link 'products:shop' category='' %}" aria-label="Remove category filter">&times;</a></span>
+      {% endif %}
+      {% if active_brand %}
+      <span class="chip"><i class="bi bi-badge-check me-1"></i>{{ active_brand.name }}
+        <a href="{% link 'products:shop' brand='' %}" aria-label="Remove brand filter">&times;</a></span>
+      {% endif %}
+      {% if price_min is not None or price_max is not None %}
+      <span class="chip"><i class="bi bi-currency-rupee me-1"></i>
+        {{ price_min|default_if_none:"0" }} – {{ price_max|default_if_none:"∞" }}
+        <a href="{% link 'products:shop' min='' max='' %}" aria-label="Remove price filter">&times;</a></span>
+      {% endif %}
+      {% if min_rating %}
+      <span class="chip"><i class="bi bi-star-fill me-1"></i>{{ min_rating }}★ &amp; up
+        <a href="{% link 'products:shop' rating='' %}" aria-label="Remove rating filter">&times;</a></span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {# ---------- sort bar ---------- #}
+    <div class="sortbar d-flex flex-wrap align-items-center gap-2 mb-4 reveal">
+      <span class="sortbar__label text-muted"><i class="bi bi-arrow-down-up me-1"></i>Sort by</span>
+      {% for key, label in sort_options %}
+      <a class="sort-btn{% if sort == key %} sort-btn--active{% endif %}"
+         href="{% link 'products:shop' sort=key %}"
+         {% if sort == key %}aria-current="true"{% endif %}>{{ label }}</a>
+      {% endfor %}
+    </div>
+
+    {# ---------- product grid ---------- #}
+    <div class="row row-cols-2 row-cols-md-3 g-3 g-lg-4">
+      {% for product in products %}
+      <div class="col reveal">
+        {% include 'partials/_product_card.html' with product=product rating=product.avg_rating count=product.review_count %}
+      </div>
+      {% empty %}
+      <div class="col-12">
+        <div class="empty-state reveal">
+          <div class="empty-state__icon"><i class="bi bi-search"></i></div>
+          <h3 class="empty-state__title">No products match your filters</h3>
+          <p class="empty-state__text">
+            Try widening the price range, removing a filter, or searching a broader keyword.
+          </p>
+          <a class="btn btn-ss-primary btn-lg"
+             href="{% link 'products:shop' category='' brand='' min='' max='' rating='' q='' %}">
+            <i class="bi bi-x-lg me-1"></i>Clear all filters
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {# ---------- pagination ---------- #}
+    {% if num_pages > 1 %}
+    <nav class="mt-5" aria-label="Pagination">
+      <ul class="pagination-ss">
+        <li>
+          {% if page_obj.has_previous %}
+          <a class="pagination-ss__btn" rel="prev"
+             href="{% link 'products:shop' page=page_obj.previous_page_number %}"
+             aria-label="Previous page"><i class="bi bi-chevron-left"></i></a>
+          {% else %}
+          <span class="pagination-ss__btn pagination-ss__btn--disabled" aria-hidden="true"><i class="bi bi-chevron-left"></i></span>
+          {% endif %}
+        </li>
+        {% for p in paginator.page_range %}
+        <li>
+          <a class="pagination-ss__btn{% if p == page %} pagination-ss__btn--active{% endif %}"
+             href="{% link 'products:shop' page=p %}"
+             {% if p == page %}aria-current="page"{% endif %}>{{ p }}</a>
+        </li>
+        {% endfor %}
+        <li>
+          {% if page_obj.has_next %}
+          <a class="pagination-ss__btn" rel="next"
+             href="{% link 'products:shop' page=page_obj.next_page_number %}"
+             aria-label="Next page"><i class="bi bi-chevron-right"></i></a>
+          {% else %}
+          <span class="pagination-ss__btn pagination-ss__btn--disabled" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+          {% endif %}
+        </li>
+      </ul>
+    </nav>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

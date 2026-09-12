@@ -1,0 +1,40 @@
+{# Step 2 — delivery option.
+   Context: totals, free_shipping_threshold.
+   One option today (standard); the step stays so express delivery can
+   slot in later without reworking the flow. #}
+<div class="card-ss p-4 p-lg-5 ck-step-card reveal">
+  <h2 class="auth-card__title mb-4">Delivery option</h2>
+
+  <form method="post" action="{% url 'orders:checkout_continue' %}" novalidate>
+    {% csrf_token %}
+    <label class="ck-option ck-option--selected">
+      <input type="radio" name="delivery" value="standard" checked>
+      <span class="ck-option__icon" aria-hidden="true"><i class="bi bi-truck"></i></span>
+      <span class="ck-option__body">
+        <span class="ck-option__title">Standard delivery</span>
+        <span class="ck-option__sub">3–5 business days</span>
+      </span>
+      <span class="ck-option__price">
+        {% if totals.shipping == 0 %}
+        <span class="ck-option__free">FREE</span>
+        {% else %}
+        ₹{{ totals.shipping }}
+        {% endif %}
+      </span>
+    </label>
+
+    <p class="text-muted small mt-3 mb-4">
+      <i class="bi bi-info-circle me-1"></i>
+      Orders above ₹{{ free_shipping_threshold }} ship FREE.
+    </p>
+
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-ss-ghost" href="{% url 'orders:checkout_step' 1 %}">
+        <i class="bi bi-arrow-left me-1"></i>Back
+      </a>
+      <button type="submit" class="btn btn-ss-primary">
+        Continue to payment <i class="bi bi-arrow-right ms-1"></i>
+      </button>
+    </div>
+  </form>
+</div>

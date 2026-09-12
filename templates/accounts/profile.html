@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}My profile — ShopSphere{% endblock %}
+
+{% block content %}
+<div class="account-header d-flex flex-wrap align-items-center gap-3 mb-4 reveal">
+  <span class="account-header__avatar">{{ user.username|first|upper }}</span>
+  <div>
+    <h1 class="page-title mb-0">{{ user.get_full_name|default:user.username }}</h1>
+    <span class="text-muted small">
+      @{{ user.username }}
+      <span class="mx-1">·</span>
+      Member since {{ user.date_joined|date:"j M Y" }}
+    </span>
+  </div>
+</div>
+
+<div class="row g-4">
+
+  {# ---------------- details form ---------------- #}
+  <div class="col-lg-7 reveal">
+    <div class="card-ss p-4 p-lg-4 h-100">
+      <h2 class="auth-card__title mb-4">Account details</h2>
+
+      <form class="form-ss" method="post" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-ss alert-ss--danger py-2">
+          {{ form.non_field_errors.0 }}
+        </div>
+        {% endif %}
+
+        <div class="row g-3">
+          {% for field in form %}
+          <div class="{% if field.name == 'phone' or field.name == 'date_of_birth' %}col-md-6{% else %}col-12{% endif %}">
+            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}
+            <div class="form-text">{{ field.help_text|safe }}</div>
+            {% endif %}
+            {% for error in field.errors %}
+            <div class="form-text text-danger">{{ error }}</div>
+            {% endfor %}
+          </div>
+          {% endfor %}
+        </div>
+
+        <button type="submit" class="btn btn-ss-primary mt-2">
+          <i class="bi bi-check-lg me-1"></i>Save changes
+        </button>
+      </form>
+    </div>
+  </div>
+
+  {# ---------------- quick overview ---------------- #}
+  <div class="col-lg-5 reveal">
+    <div class="card-ss p-4">
+      <h2 class="auth-card__title mb-3">Account</h2>
+      <ul class="account-links">
+        <li>
+          <i class="bi bi-geo-alt"></i>
+          <div class="me-2">
+            <a href="{% url 'customers:addresses' %}">Saved addresses</a>
+            <div class="text-muted small">{{ address_count }} on file</div>
+          </div>
+        </li>
+        <li>
+          <i class="bi bi-heart"></i>
+          <div class="me-2">
+            <a href="{% url 'customers:wishlist_page' %}">My wishlist</a>
+            <div class="text-muted small">{{ wishlist_count }} saved for later</div>
+          </div>
+        </li>
+        <li>
+          <i class="bi bi-receipt"></i>
+          <div class="me-2">
+            <a href="{% url 'orders:order_list' %}">My orders</a>
+            <div class="text-muted small">Order history &amp; returns</div>
+          </div>
+        </li>
+        <li>
+          <i class="bi bi-key"></i>
+          <div class="me-2">
+            <a href="{% url 'customers:change_password' %}">Change password</a>
+            <div class="text-muted small">Keep your account safe</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

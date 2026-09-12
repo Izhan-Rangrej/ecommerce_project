@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}About Us — ShopSphere{% endblock %}
+{% block meta_description %}Learn about ShopSphere — what we sell, why customers shop with us, and how we operate.{% endblock %}
+
+{% block content %}
+<div class="page-hero reveal">
+  <h1 class="page-title text-white">About ShopSphere</h1>
+  <p class="page-sub text-white-50">
+    A modern online store built to make everyday shopping simple.
+  </p>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card-ss p-4 p-lg-5 reveal">
+      <h3 class="page-title-sm mb-3">Who we are</h3>
+      <p class="text-ss">
+        ShopSphere started with a simple idea: online shopping should feel as
+        easy as browsing a well-organised store. We bring together quality
+        electronics, fashion, home &amp; living and sports products under one
+        roof — with honest prices, clear product information and fast delivery.
+      </p>
+
+      <h3 class="page-title-sm mt-5 mb-3">Why shop with us</h3>
+      <ul class="list-ss">
+        <li><strong>Curated catalog</strong> — every product is selected for quality and value.</li>
+        <li><strong>Transparent pricing</strong> — sale prices and taxes are shown up front, no surprises at checkout.</li>
+        <li><strong>Easy returns</strong> — 7-day return window on most items.</li>
+        <li><strong>Your data stays yours</strong> — we only collect what we need to fulfil your orders.</li>
+      </ul>
+
+      <h3 class="page-title-sm mt-5 mb-3">Contact</h3>
+      <p class="text-ss">
+        Questions, feedback or bulk orders? Reach us at
+        <a href="mailto:support@shopsphere.example">support@shopsphere.example</a>
+        or through our <a href="{% url 'core:contact' %}">contact page</a>.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

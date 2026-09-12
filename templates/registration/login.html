@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Log in — ShopSphere{% endblock %}
+{% block meta_description %}Log in to your ShopSphere account.{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-5 reveal">
+      <div class="card-ss auth-card p-4 p-lg-5">
+        <h1 class="auth-card__title mb-1">Welcome back</h1>
+        <p class="text-muted mb-4">Log in to continue shopping.</p>
+
+        <form class="form-ss" method="post" novalidate>
+          {% csrf_token %}
+          {# LoginView renders the standard auth form: username + password,
+             plus the hidden "next" field that sends you back to the page
+             you came from (validated server-side, no open redirects). #}
+          {{ form.next }}
+
+          {% for field in form.visible_fields %}
+          <div class="mb-3">
+            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}
+            <div class="form-text text-danger">{{ error }}</div>
+            {% endfor %}
+          </div>
+          {% endfor %}
+
+          {# Non-field errors FIRST (PHASE 18): this is where the
+             rate-limiter's "try again in N minutes" message appears.
+             A plain failed login then gets the friendly default. #}
+          {% if form.non_field_errors %}
+          <div class="alert alert-ss alert-ss--danger py-2 mb-3">
+            {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+          </div>
+          {% elif form.errors %}
+          <div class="alert alert-ss alert-ss--danger py-2 mb-3">
+            Your username and password didn't match. Please try again.
+          </div>
+          {% endif %}
+
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <a class="small" href="{% url 'password_reset' %}">Forgot your password?</a>
+          </div>
+
+          <button type="submit" class="btn btn-ss-primary btn-lg w-100">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Log in
+          </button>
+        </form>
+
+        <hr class="ss-divider my-4">
+
+        <p class="text-center text-muted mb-0">
+          New to ShopSphere?
+          <a class="fw-semibold" href="{% url 'customers:register' %}">Create an account</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

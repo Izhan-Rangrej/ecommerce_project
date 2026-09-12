@@ -1,0 +1,18 @@
+{# 5-step progress bar.
+   Context: `steps` (list of 5 labels) and `step` (current step, 1-5).
+   Steps before the current one show a tick; the current one is highlighted. #}
+<ol class="ck-steps mb-4" aria-label="Checkout progress">
+  {% for label in steps %}
+  <li class="ck-step{% if forloop.counter < step %} ck-step--done{% elif forloop.counter == step %} ck-step--active{% endif %}"
+      {% if forloop.counter == step %}aria-current="step"{% endif %}>
+    <span class="ck-step__dot">
+      {% if forloop.counter < step %}
+      <i class="bi bi-check-lg" aria-hidden="true"></i>
+      {% else %}
+      {{ forloop.counter }}
+      {% endif %}
+    </span>
+    <span class="ck-step__label">{{ label }}</span>
+  </li>
+  {% endfor %}
+</ol>
