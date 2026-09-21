@@ -6,7 +6,7 @@ A complete, modern, responsive e-commerce website built with **Python Django**
 > This README is a work-in-progress. It will be finished in the final phase
 > with the full feature list, screenshots and deployment instructions.
 ## Site is live at
--https://quickbite-p7x2.onrender.com
+-https://shopsphere-t0ez.onrender.com
 
 ## Current status
 
